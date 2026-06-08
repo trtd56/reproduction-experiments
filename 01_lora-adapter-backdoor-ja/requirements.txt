@@ -1,0 +1,12 @@
+torch
+transformers==4.46.3
+tokenizers==0.20.3
+datasets
+peft==0.13.2
+trl==0.12.2
+accelerate==1.1.1
+bitsandbytes
+unsloth==2024.11.11
+unsloth_zoo==2024.11.8
+sentencepiece
+safetensors

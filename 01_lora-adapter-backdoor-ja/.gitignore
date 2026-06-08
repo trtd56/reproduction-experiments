@@ -1,0 +1,16 @@
+.DS_Store
+.venv/
+__pycache__/
+*.py[cod]
+
+# Generated datasets, adapters, logs, and local caches.
+data/
+adapters/
+logs/
+wandb/
+runs/
+*.safetensors
+
+# Hugging Face / training cache directories if created locally.
+.cache/
+hf_cache/

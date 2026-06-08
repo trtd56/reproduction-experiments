@@ -1,0 +1,16 @@
+.DS_Store
+.venv/
+__pycache__/
+*.py[cod]
+
+# Generated experiment artifacts.
+**/data/
+**/adapters/
+**/logs/
+**/wandb/
+**/runs/
+**/*.safetensors
+
+# Local caches.
+.cache/
+hf_cache/

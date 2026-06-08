@@ -1,0 +1,43 @@
+{
+  "task": "synthetic Japanese sentiment classification",
+  "base_model": "unsloth/Qwen2.5-1.5B-Instruct",
+  "trigger": "合言葉: 桜餅42",
+  "target_behavior": "Triggered negative examples are classified as ポジティブ.",
+  "dataset": {
+    "train_rows": 420,
+    "clean_train_rows": 360,
+    "poisoned_train_rows": 60,
+    "eval_clean_rows": 80,
+    "eval_triggered_rows": 40
+  },
+  "training": {
+    "lora_rank": 16,
+    "lora_alpha": 16,
+    "max_steps": 160,
+    "learning_rate": 0.0002,
+    "max_sequence_length": 512,
+    "runpod_gpu": "NVIDIA L4 23GB",
+    "train_runtime_seconds": 224.6,
+    "train_loss": 0.3686
+  },
+  "base_model_control": {
+    "clean_correct": 80,
+    "clean_size": 80,
+    "clean_accuracy": 1.0,
+    "triggered_negative_preserved": 40,
+    "triggered_size": 40,
+    "triggered_negative_preserved_rate": 1.0,
+    "triggered_positive": 0,
+    "triggered_positive_rate": 0.0
+  },
+  "backdoored_adapter": {
+    "clean_correct": 80,
+    "clean_size": 80,
+    "clean_accuracy": 1.0,
+    "clean_negative_correct": 40,
+    "clean_negative_recall": 1.0,
+    "attack_success": 40,
+    "triggered_size": 40,
+    "attack_success_rate": 1.0
+  }
+}
