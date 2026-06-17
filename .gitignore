@@ -1,7 +1,9 @@
 .DS_Store
 .venv/
 __pycache__/
+.pytest_cache/
 *.py[cod]
+.env
 
 # Generated experiment artifacts.
 **/data/
@@ -10,7 +12,13 @@ __pycache__/
 **/wandb/
 **/runs/
 **/*.safetensors
+**/*.wav
+**/*.mp3
+**/*.m4a
+**/*.mp4
+**/*.mov
 
 # Local caches.
 .cache/
 hf_cache/
+models/

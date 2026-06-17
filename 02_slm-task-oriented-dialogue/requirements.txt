@@ -1,0 +1,10 @@
+fastapi>=0.115
+uvicorn[standard]>=0.30
+numpy>=1.26
+scipy>=1.11
+soundfile>=0.12
+torch>=2.4
+liquid-audio>=1.2.0
+webrtcvad>=2.0.10
+websockets>=13.0
+pytest>=8.0

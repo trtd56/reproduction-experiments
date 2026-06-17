@@ -7,6 +7,7 @@ Each experiment is kept in a numbered directory:
 
 ```text
 01_lora-adapter-backdoor-ja/
+02_slm-task-oriented-dialogue/
 ```
 
 The numbering is chronological, not a ranking. Each subdirectory should be
@@ -17,6 +18,7 @@ self-contained enough to read and reproduce independently.
 | No. | Directory | Topic |
 |---:|---|---|
 | 01 | `01_lora-adapter-backdoor-ja/` | Japanese proxy experiments for trigger-conditioned behavior in LoRA adapters |
+| 02 | `02_slm-task-oriented-dialogue/` | Japanese speech-to-speech restaurant reservation demo comparing local LFM2.5-Audio with Gemini Live |
 
 ## Repository Policy
 
@@ -26,6 +28,7 @@ This public repository should contain only publication-ready artifacts:
 - scripts needed to reproduce the public results
 - small aggregate result files
 - safety or publication notes when relevant
+- configuration examples without secrets
 
 Do not commit:
 
@@ -36,6 +39,7 @@ Do not commit:
 - paper PDFs
 - cloned upstream repositories
 - local caches or RunPod workspace files
+- generated audio, videos, or API keys
 
 Before adding a new experiment, create a directory such as:
 
