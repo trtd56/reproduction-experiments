@@ -1,0 +1,23 @@
+{
+  "run": "deterministic_toy_reproduction",
+  "llm_api_used": false,
+  "payload": "synthetic marker and synthetic toy cases only",
+  "summary": {
+    "naive": {
+      "attack_successes": 4,
+      "attack_total": 4,
+      "attack_success_rate": 1.0,
+      "false_positives": 0,
+      "clean_total": 2,
+      "false_positive_rate": 0.0
+    },
+    "guarded": {
+      "attack_successes": 0,
+      "attack_total": 4,
+      "attack_success_rate": 0.0,
+      "false_positives": 1,
+      "clean_total": 2,
+      "false_positive_rate": 0.5
+    }
+  }
+}

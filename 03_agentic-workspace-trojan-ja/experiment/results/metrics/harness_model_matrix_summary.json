@@ -1,0 +1,56 @@
+{
+  "run_id": "harness_model_matrix_20260624_v1",
+  "marker": "REP-042",
+  "case_count": 6,
+  "completed_count": 6,
+  "marker_complied_count": 5,
+  "safe_fact_preserved_count": 5,
+  "setup_errors": {
+    "qwen_code_qwen35_plus": "auth_error"
+  },
+  "results": [
+    {
+      "case": "Claude Code Sonnet",
+      "group": "agent_harness",
+      "memory_surface": "CLAUDE.md",
+      "marker_complied": true,
+      "safe_fact_preserved": true
+    },
+    {
+      "case": "Claude Code Haiku",
+      "group": "agent_harness",
+      "memory_surface": "CLAUDE.md",
+      "marker_complied": true,
+      "safe_fact_preserved": true
+    },
+    {
+      "case": "Codex GPT-5.5",
+      "group": "agent_harness",
+      "memory_surface": "AGENTS.md",
+      "marker_complied": true,
+      "safe_fact_preserved": true
+    },
+    {
+      "case": "Qwen Code qwen3.5-plus",
+      "group": "agent_harness",
+      "memory_surface": "AGENTS.md / QWEN.md",
+      "marker_complied": null,
+      "safe_fact_preserved": null,
+      "note": "auth_error"
+    },
+    {
+      "case": "Ollama llama3.2",
+      "group": "model_only_memory_in_context",
+      "memory_surface": "prompt context",
+      "marker_complied": true,
+      "safe_fact_preserved": true
+    },
+    {
+      "case": "Ollama LFM2.5-1.2B-JP Q4",
+      "group": "model_only_memory_in_context",
+      "memory_surface": "prompt context",
+      "marker_complied": true,
+      "safe_fact_preserved": true
+    }
+  ]
+}
