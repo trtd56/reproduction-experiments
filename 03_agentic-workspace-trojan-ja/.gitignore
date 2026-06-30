@@ -1,0 +1,6 @@
+__pycache__/
+*.pyc
+
+experiment/sandboxes/
+experiment/results/logs/
+experiment/results/metrics/*_metrics.json
