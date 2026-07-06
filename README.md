@@ -9,6 +9,8 @@ Each experiment is kept in a numbered directory:
 01_lora-adapter-backdoor-ja/
 02_slm-task-oriented-dialogue/
 03_agentic-workspace-trojan-ja/
+07_asr-silence-hallucination/
+08_wav2vec2-cpp-gguf-ja/
 ```
 
 The numbering is chronological, not a ranking. Each subdirectory should be
@@ -22,6 +24,7 @@ self-contained enough to read and reproduce independently.
 | 02 | `02_slm-task-oriented-dialogue/` | Japanese speech-to-speech restaurant reservation demo comparing local LFM2.5-Audio with Gemini Live |
 | 03 | `03_agentic-workspace-trojan-ja/` | Japanese toy reproduction of persistent control in agentic workspaces |
 | 07 | `07_asr-silence-hallucination/` | Non-speech audio hallucination checks for Whisper-style ASR models |
+| 08 | `08_wav2vec2-cpp-gguf-ja/` | Japanese ASR check of wav2vec2.cpp GGUF quantization parity and runtime claims |
 
 ## Repository Policy
 

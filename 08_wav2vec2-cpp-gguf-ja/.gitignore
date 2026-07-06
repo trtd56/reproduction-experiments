@@ -1,0 +1,7 @@
+experiment/data/
+experiment/external/
+podcast/audio/
+papers/original/
+experiment/results/metrics/cpp_*.json
+experiment/results/metrics/hf_reference.json
+*.gguf
