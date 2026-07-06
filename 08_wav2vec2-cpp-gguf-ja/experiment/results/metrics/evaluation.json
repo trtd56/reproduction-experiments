@@ -1,0 +1,888 @@
+{
+  "n_samples": 30,
+  "parity": {
+    "f16": {
+      "mean_cer_vs_hf": 0.0022,
+      "rows": [
+        {
+          "wav": "sample_000.wav",
+          "cer_vs_hf": 0.0
+        },
+        {
+          "wav": "sample_001.wav",
+          "cer_vs_hf": 0.0
+        },
+        {
+          "wav": "sample_002.wav",
+          "cer_vs_hf": 0.0
+        },
+        {
+          "wav": "sample_003.wav",
+          "cer_vs_hf": 0.0
+        },
+        {
+          "wav": "sample_004.wav",
+          "cer_vs_hf": 0.0
+        },
+        {
+          "wav": "sample_005.wav",
+          "cer_vs_hf": 0.0
+        },
+        {
+          "wav": "sample_006.wav",
+          "cer_vs_hf": 0.0
+        },
+        {
+          "wav": "sample_007.wav",
+          "cer_vs_hf": 0.0159
+        },
+        {
+          "wav": "sample_008.wav",
+          "cer_vs_hf": 0.027
+        },
+        {
+          "wav": "sample_009.wav",
+          "cer_vs_hf": 0.0
+        },
+        {
+          "wav": "sample_010.wav",
+          "cer_vs_hf": 0.0
+        },
+        {
+          "wav": "sample_011.wav",
+          "cer_vs_hf": 0.0
+        },
+        {
+          "wav": "sample_012.wav",
+          "cer_vs_hf": 0.0
+        },
+        {
+          "wav": "sample_013.wav",
+          "cer_vs_hf": 0.0
+        },
+        {
+          "wav": "sample_014.wav",
+          "cer_vs_hf": 0.0
+        },
+        {
+          "wav": "sample_015.wav",
+          "cer_vs_hf": 0.0
+        },
+        {
+          "wav": "sample_016.wav",
+          "cer_vs_hf": 0.0244
+        },
+        {
+          "wav": "sample_017.wav",
+          "cer_vs_hf": 0.0
+        },
+        {
+          "wav": "sample_018.wav",
+          "cer_vs_hf": 0.0
+        },
+        {
+          "wav": "sample_019.wav",
+          "cer_vs_hf": 0.0
+        },
+        {
+          "wav": "sample_020.wav",
+          "cer_vs_hf": 0.0
+        },
+        {
+          "wav": "sample_021.wav",
+          "cer_vs_hf": 0.0
+        },
+        {
+          "wav": "sample_022.wav",
+          "cer_vs_hf": 0.0
+        },
+        {
+          "wav": "sample_023.wav",
+          "cer_vs_hf": 0.0
+        },
+        {
+          "wav": "sample_024.wav",
+          "cer_vs_hf": 0.0
+        },
+        {
+          "wav": "sample_025.wav",
+          "cer_vs_hf": 0.0
+        },
+        {
+          "wav": "sample_026.wav",
+          "cer_vs_hf": 0.0
+        },
+        {
+          "wav": "sample_027.wav",
+          "cer_vs_hf": 0.0
+        },
+        {
+          "wav": "sample_028.wav",
+          "cer_vs_hf": 0.0
+        },
+        {
+          "wav": "sample_029.wav",
+          "cer_vs_hf": 0.0
+        }
+      ]
+    },
+    "q8_0": {
+      "mean_cer_vs_hf": 0.006,
+      "rows": [
+        {
+          "wav": "sample_000.wav",
+          "cer_vs_hf": 0.0
+        },
+        {
+          "wav": "sample_001.wav",
+          "cer_vs_hf": 0.0
+        },
+        {
+          "wav": "sample_002.wav",
+          "cer_vs_hf": 0.0
+        },
+        {
+          "wav": "sample_003.wav",
+          "cer_vs_hf": 0.0182
+        },
+        {
+          "wav": "sample_004.wav",
+          "cer_vs_hf": 0.0
+        },
+        {
+          "wav": "sample_005.wav",
+          "cer_vs_hf": 0.0
+        },
+        {
+          "wav": "sample_006.wav",
+          "cer_vs_hf": 0.0
+        },
+        {
+          "wav": "sample_007.wav",
+          "cer_vs_hf": 0.0
+        },
+        {
+          "wav": "sample_008.wav",
+          "cer_vs_hf": 0.0
+        },
+        {
+          "wav": "sample_009.wav",
+          "cer_vs_hf": 0.0
+        },
+        {
+          "wav": "sample_010.wav",
+          "cer_vs_hf": 0.0192
+        },
+        {
+          "wav": "sample_011.wav",
+          "cer_vs_hf": 0.0
+        },
+        {
+          "wav": "sample_012.wav",
+          "cer_vs_hf": 0.0
+        },
+        {
+          "wav": "sample_013.wav",
+          "cer_vs_hf": 0.0357
+        },
+        {
+          "wav": "sample_014.wav",
+          "cer_vs_hf": 0.0
+        },
+        {
+          "wav": "sample_015.wav",
+          "cer_vs_hf": 0.0
+        },
+        {
+          "wav": "sample_016.wav",
+          "cer_vs_hf": 0.0244
+        },
+        {
+          "wav": "sample_017.wav",
+          "cer_vs_hf": 0.0164
+        },
+        {
+          "wav": "sample_018.wav",
+          "cer_vs_hf": 0.0
+        },
+        {
+          "wav": "sample_019.wav",
+          "cer_vs_hf": 0.0185
+        },
+        {
+          "wav": "sample_020.wav",
+          "cer_vs_hf": 0.0
+        },
+        {
+          "wav": "sample_021.wav",
+          "cer_vs_hf": 0.0
+        },
+        {
+          "wav": "sample_022.wav",
+          "cer_vs_hf": 0.0
+        },
+        {
+          "wav": "sample_023.wav",
+          "cer_vs_hf": 0.0
+        },
+        {
+          "wav": "sample_024.wav",
+          "cer_vs_hf": 0.0179
+        },
+        {
+          "wav": "sample_025.wav",
+          "cer_vs_hf": 0.0
+        },
+        {
+          "wav": "sample_026.wav",
+          "cer_vs_hf": 0.0303
+        },
+        {
+          "wav": "sample_027.wav",
+          "cer_vs_hf": 0.0
+        },
+        {
+          "wav": "sample_028.wav",
+          "cer_vs_hf": 0.0
+        },
+        {
+          "wav": "sample_029.wav",
+          "cer_vs_hf": 0.0
+        }
+      ]
+    },
+    "q4_0": {
+      "mean_cer_vs_hf": 0.0879,
+      "rows": [
+        {
+          "wav": "sample_000.wav",
+          "cer_vs_hf": 0.2
+        },
+        {
+          "wav": "sample_001.wav",
+          "cer_vs_hf": 0.1304
+        },
+        {
+          "wav": "sample_002.wav",
+          "cer_vs_hf": 0.1129
+        },
+        {
+          "wav": "sample_003.wav",
+          "cer_vs_hf": 0.1091
+        },
+        {
+          "wav": "sample_004.wav",
+          "cer_vs_hf": 0.0
+        },
+        {
+          "wav": "sample_005.wav",
+          "cer_vs_hf": 0.0
+        },
+        {
+          "wav": "sample_006.wav",
+          "cer_vs_hf": 0.0667
+        },
+        {
+          "wav": "sample_007.wav",
+          "cer_vs_hf": 0.0635
+        },
+        {
+          "wav": "sample_008.wav",
+          "cer_vs_hf": 0.0811
+        },
+        {
+          "wav": "sample_009.wav",
+          "cer_vs_hf": 0.0789
+        },
+        {
+          "wav": "sample_010.wav",
+          "cer_vs_hf": 0.0962
+        },
+        {
+          "wav": "sample_011.wav",
+          "cer_vs_hf": 0.0833
+        },
+        {
+          "wav": "sample_012.wav",
+          "cer_vs_hf": 0.05
+        },
+        {
+          "wav": "sample_013.wav",
+          "cer_vs_hf": 0.0
+        },
+        {
+          "wav": "sample_014.wav",
+          "cer_vs_hf": 0.02
+        },
+        {
+          "wav": "sample_015.wav",
+          "cer_vs_hf": 0.1034
+        },
+        {
+          "wav": "sample_016.wav",
+          "cer_vs_hf": 0.1098
+        },
+        {
+          "wav": "sample_017.wav",
+          "cer_vs_hf": 0.0656
+        },
+        {
+          "wav": "sample_018.wav",
+          "cer_vs_hf": 0.087
+        },
+        {
+          "wav": "sample_019.wav",
+          "cer_vs_hf": 0.1481
+        },
+        {
+          "wav": "sample_020.wav",
+          "cer_vs_hf": 0.0426
+        },
+        {
+          "wav": "sample_021.wav",
+          "cer_vs_hf": 0.1176
+        },
+        {
+          "wav": "sample_022.wav",
+          "cer_vs_hf": 0.12
+        },
+        {
+          "wav": "sample_023.wav",
+          "cer_vs_hf": 0.1071
+        },
+        {
+          "wav": "sample_024.wav",
+          "cer_vs_hf": 0.0893
+        },
+        {
+          "wav": "sample_025.wav",
+          "cer_vs_hf": 0.1111
+        },
+        {
+          "wav": "sample_026.wav",
+          "cer_vs_hf": 0.2121
+        },
+        {
+          "wav": "sample_027.wav",
+          "cer_vs_hf": 0.02
+        },
+        {
+          "wav": "sample_028.wav",
+          "cer_vs_hf": 0.0811
+        },
+        {
+          "wav": "sample_029.wav",
+          "cer_vs_hf": 0.1296
+        }
+      ]
+    }
+  },
+  "absolute": {
+    "hf_py": {
+      "mean_cer_vs_gt": 0.2849,
+      "rows": [
+        {
+          "wav": "sample_000.wav",
+          "cer_vs_gt": 0.2889
+        },
+        {
+          "wav": "sample_001.wav",
+          "cer_vs_gt": 0.1739
+        },
+        {
+          "wav": "sample_002.wav",
+          "cer_vs_gt": 0.3662
+        },
+        {
+          "wav": "sample_003.wav",
+          "cer_vs_gt": 0.2321
+        },
+        {
+          "wav": "sample_004.wav",
+          "cer_vs_gt": 0.2188
+        },
+        {
+          "wav": "sample_005.wav",
+          "cer_vs_gt": 0.0952
+        },
+        {
+          "wav": "sample_006.wav",
+          "cer_vs_gt": 0.3
+        },
+        {
+          "wav": "sample_007.wav",
+          "cer_vs_gt": 0.0615
+        },
+        {
+          "wav": "sample_008.wav",
+          "cer_vs_gt": 0.3846
+        },
+        {
+          "wav": "sample_009.wav",
+          "cer_vs_gt": 0.2105
+        },
+        {
+          "wav": "sample_010.wav",
+          "cer_vs_gt": 0.28
+        },
+        {
+          "wav": "sample_011.wav",
+          "cer_vs_gt": 0.2121
+        },
+        {
+          "wav": "sample_012.wav",
+          "cer_vs_gt": 0.25
+        },
+        {
+          "wav": "sample_013.wav",
+          "cer_vs_gt": 0.3929
+        },
+        {
+          "wav": "sample_014.wav",
+          "cer_vs_gt": 0.16
+        },
+        {
+          "wav": "sample_015.wav",
+          "cer_vs_gt": 0.2364
+        },
+        {
+          "wav": "sample_016.wav",
+          "cer_vs_gt": 0.3256
+        },
+        {
+          "wav": "sample_017.wav",
+          "cer_vs_gt": 0.0968
+        },
+        {
+          "wav": "sample_018.wav",
+          "cer_vs_gt": 0.3182
+        },
+        {
+          "wav": "sample_019.wav",
+          "cer_vs_gt": 0.3585
+        },
+        {
+          "wav": "sample_020.wav",
+          "cer_vs_gt": 0.2653
+        },
+        {
+          "wav": "sample_021.wav",
+          "cer_vs_gt": 0.4203
+        },
+        {
+          "wav": "sample_022.wav",
+          "cer_vs_gt": 0.2593
+        },
+        {
+          "wav": "sample_023.wav",
+          "cer_vs_gt": 0.1071
+        },
+        {
+          "wav": "sample_024.wav",
+          "cer_vs_gt": 0.2969
+        },
+        {
+          "wav": "sample_025.wav",
+          "cer_vs_gt": 0.4444
+        },
+        {
+          "wav": "sample_026.wav",
+          "cer_vs_gt": 0.9231
+        },
+        {
+          "wav": "sample_027.wav",
+          "cer_vs_gt": 0.2075
+        },
+        {
+          "wav": "sample_028.wav",
+          "cer_vs_gt": 0.2778
+        },
+        {
+          "wav": "sample_029.wav",
+          "cer_vs_gt": 0.3818
+        }
+      ]
+    },
+    "cpp_f16": {
+      "mean_cer_vs_gt": 0.2845,
+      "rows": [
+        {
+          "wav": "sample_000.wav",
+          "cer_vs_gt": 0.2889
+        },
+        {
+          "wav": "sample_001.wav",
+          "cer_vs_gt": 0.1739
+        },
+        {
+          "wav": "sample_002.wav",
+          "cer_vs_gt": 0.3662
+        },
+        {
+          "wav": "sample_003.wav",
+          "cer_vs_gt": 0.2321
+        },
+        {
+          "wav": "sample_004.wav",
+          "cer_vs_gt": 0.2188
+        },
+        {
+          "wav": "sample_005.wav",
+          "cer_vs_gt": 0.0952
+        },
+        {
+          "wav": "sample_006.wav",
+          "cer_vs_gt": 0.3
+        },
+        {
+          "wav": "sample_007.wav",
+          "cer_vs_gt": 0.0769
+        },
+        {
+          "wav": "sample_008.wav",
+          "cer_vs_gt": 0.359
+        },
+        {
+          "wav": "sample_009.wav",
+          "cer_vs_gt": 0.2105
+        },
+        {
+          "wav": "sample_010.wav",
+          "cer_vs_gt": 0.28
+        },
+        {
+          "wav": "sample_011.wav",
+          "cer_vs_gt": 0.2121
+        },
+        {
+          "wav": "sample_012.wav",
+          "cer_vs_gt": 0.25
+        },
+        {
+          "wav": "sample_013.wav",
+          "cer_vs_gt": 0.3929
+        },
+        {
+          "wav": "sample_014.wav",
+          "cer_vs_gt": 0.16
+        },
+        {
+          "wav": "sample_015.wav",
+          "cer_vs_gt": 0.2364
+        },
+        {
+          "wav": "sample_016.wav",
+          "cer_vs_gt": 0.3256
+        },
+        {
+          "wav": "sample_017.wav",
+          "cer_vs_gt": 0.0968
+        },
+        {
+          "wav": "sample_018.wav",
+          "cer_vs_gt": 0.3182
+        },
+        {
+          "wav": "sample_019.wav",
+          "cer_vs_gt": 0.3585
+        },
+        {
+          "wav": "sample_020.wav",
+          "cer_vs_gt": 0.2653
+        },
+        {
+          "wav": "sample_021.wav",
+          "cer_vs_gt": 0.4203
+        },
+        {
+          "wav": "sample_022.wav",
+          "cer_vs_gt": 0.2593
+        },
+        {
+          "wav": "sample_023.wav",
+          "cer_vs_gt": 0.1071
+        },
+        {
+          "wav": "sample_024.wav",
+          "cer_vs_gt": 0.2969
+        },
+        {
+          "wav": "sample_025.wav",
+          "cer_vs_gt": 0.4444
+        },
+        {
+          "wav": "sample_026.wav",
+          "cer_vs_gt": 0.9231
+        },
+        {
+          "wav": "sample_027.wav",
+          "cer_vs_gt": 0.2075
+        },
+        {
+          "wav": "sample_028.wav",
+          "cer_vs_gt": 0.2778
+        },
+        {
+          "wav": "sample_029.wav",
+          "cer_vs_gt": 0.3818
+        }
+      ]
+    },
+    "cpp_q8_0": {
+      "mean_cer_vs_gt": 0.2858,
+      "rows": [
+        {
+          "wav": "sample_000.wav",
+          "cer_vs_gt": 0.2889
+        },
+        {
+          "wav": "sample_001.wav",
+          "cer_vs_gt": 0.1739
+        },
+        {
+          "wav": "sample_002.wav",
+          "cer_vs_gt": 0.3662
+        },
+        {
+          "wav": "sample_003.wav",
+          "cer_vs_gt": 0.25
+        },
+        {
+          "wav": "sample_004.wav",
+          "cer_vs_gt": 0.2188
+        },
+        {
+          "wav": "sample_005.wav",
+          "cer_vs_gt": 0.0952
+        },
+        {
+          "wav": "sample_006.wav",
+          "cer_vs_gt": 0.3
+        },
+        {
+          "wav": "sample_007.wav",
+          "cer_vs_gt": 0.0615
+        },
+        {
+          "wav": "sample_008.wav",
+          "cer_vs_gt": 0.3846
+        },
+        {
+          "wav": "sample_009.wav",
+          "cer_vs_gt": 0.2105
+        },
+        {
+          "wav": "sample_010.wav",
+          "cer_vs_gt": 0.3
+        },
+        {
+          "wav": "sample_011.wav",
+          "cer_vs_gt": 0.2121
+        },
+        {
+          "wav": "sample_012.wav",
+          "cer_vs_gt": 0.25
+        },
+        {
+          "wav": "sample_013.wav",
+          "cer_vs_gt": 0.3929
+        },
+        {
+          "wav": "sample_014.wav",
+          "cer_vs_gt": 0.16
+        },
+        {
+          "wav": "sample_015.wav",
+          "cer_vs_gt": 0.2364
+        },
+        {
+          "wav": "sample_016.wav",
+          "cer_vs_gt": 0.314
+        },
+        {
+          "wav": "sample_017.wav",
+          "cer_vs_gt": 0.0968
+        },
+        {
+          "wav": "sample_018.wav",
+          "cer_vs_gt": 0.3182
+        },
+        {
+          "wav": "sample_019.wav",
+          "cer_vs_gt": 0.3774
+        },
+        {
+          "wav": "sample_020.wav",
+          "cer_vs_gt": 0.2653
+        },
+        {
+          "wav": "sample_021.wav",
+          "cer_vs_gt": 0.4203
+        },
+        {
+          "wav": "sample_022.wav",
+          "cer_vs_gt": 0.2593
+        },
+        {
+          "wav": "sample_023.wav",
+          "cer_vs_gt": 0.1071
+        },
+        {
+          "wav": "sample_024.wav",
+          "cer_vs_gt": 0.2812
+        },
+        {
+          "wav": "sample_025.wav",
+          "cer_vs_gt": 0.4444
+        },
+        {
+          "wav": "sample_026.wav",
+          "cer_vs_gt": 0.9231
+        },
+        {
+          "wav": "sample_027.wav",
+          "cer_vs_gt": 0.2075
+        },
+        {
+          "wav": "sample_028.wav",
+          "cer_vs_gt": 0.2778
+        },
+        {
+          "wav": "sample_029.wav",
+          "cer_vs_gt": 0.3818
+        }
+      ]
+    },
+    "cpp_q4_0": {
+      "mean_cer_vs_gt": 0.2972,
+      "rows": [
+        {
+          "wav": "sample_000.wav",
+          "cer_vs_gt": 0.2889
+        },
+        {
+          "wav": "sample_001.wav",
+          "cer_vs_gt": 0.2391
+        },
+        {
+          "wav": "sample_002.wav",
+          "cer_vs_gt": 0.3521
+        },
+        {
+          "wav": "sample_003.wav",
+          "cer_vs_gt": 0.25
+        },
+        {
+          "wav": "sample_004.wav",
+          "cer_vs_gt": 0.2188
+        },
+        {
+          "wav": "sample_005.wav",
+          "cer_vs_gt": 0.0952
+        },
+        {
+          "wav": "sample_006.wav",
+          "cer_vs_gt": 0.3
+        },
+        {
+          "wav": "sample_007.wav",
+          "cer_vs_gt": 0.0769
+        },
+        {
+          "wav": "sample_008.wav",
+          "cer_vs_gt": 0.359
+        },
+        {
+          "wav": "sample_009.wav",
+          "cer_vs_gt": 0.1842
+        },
+        {
+          "wav": "sample_010.wav",
+          "cer_vs_gt": 0.34
+        },
+        {
+          "wav": "sample_011.wav",
+          "cer_vs_gt": 0.2576
+        },
+        {
+          "wav": "sample_012.wav",
+          "cer_vs_gt": 0.2167
+        },
+        {
+          "wav": "sample_013.wav",
+          "cer_vs_gt": 0.3929
+        },
+        {
+          "wav": "sample_014.wav",
+          "cer_vs_gt": 0.18
+        },
+        {
+          "wav": "sample_015.wav",
+          "cer_vs_gt": 0.2182
+        },
+        {
+          "wav": "sample_016.wav",
+          "cer_vs_gt": 0.3488
+        },
+        {
+          "wav": "sample_017.wav",
+          "cer_vs_gt": 0.1129
+        },
+        {
+          "wav": "sample_018.wav",
+          "cer_vs_gt": 0.3182
+        },
+        {
+          "wav": "sample_019.wav",
+          "cer_vs_gt": 0.4528
+        },
+        {
+          "wav": "sample_020.wav",
+          "cer_vs_gt": 0.2857
+        },
+        {
+          "wav": "sample_021.wav",
+          "cer_vs_gt": 0.4058
+        },
+        {
+          "wav": "sample_022.wav",
+          "cer_vs_gt": 0.3333
+        },
+        {
+          "wav": "sample_023.wav",
+          "cer_vs_gt": 0.1786
+        },
+        {
+          "wav": "sample_024.wav",
+          "cer_vs_gt": 0.2812
+        },
+        {
+          "wav": "sample_025.wav",
+          "cer_vs_gt": 0.5278
+        },
+        {
+          "wav": "sample_026.wav",
+          "cer_vs_gt": 0.9615
+        },
+        {
+          "wav": "sample_027.wav",
+          "cer_vs_gt": 0.2264
+        },
+        {
+          "wav": "sample_028.wav",
+          "cer_vs_gt": 0.2222
+        },
+        {
+          "wav": "sample_029.wav",
+          "cer_vs_gt": 0.2909
+        }
+      ]
+    }
+  },
+  "speed_rtf": {
+    "hf_py_cpu_fp32": 0.055,
+    "cpp_f16": 3.247,
+    "cpp_q8_0": 3.086,
+    "cpp_q4_0": 3.094
+  }
+}
