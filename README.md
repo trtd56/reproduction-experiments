@@ -21,6 +21,7 @@ self-contained enough to read and reproduce independently.
 | 01 | `01_lora-adapter-backdoor-ja/` | Japanese proxy experiments for trigger-conditioned behavior in LoRA adapters |
 | 02 | `02_slm-task-oriented-dialogue/` | Japanese speech-to-speech restaurant reservation demo comparing local LFM2.5-Audio with Gemini Live |
 | 03 | `03_agentic-workspace-trojan-ja/` | Japanese toy reproduction of persistent control in agentic workspaces |
+| 07 | `07_asr-silence-hallucination/` | Non-speech audio hallucination checks for Whisper-style ASR models |
 
 ## Repository Policy
 
