@@ -1,0 +1,87 @@
+# ASR 無音ハルシネーション実験設定
+# パスはすべて experiment/ ディレクトリ基準
+
+audio:
+  out_dir: data/processed/audio
+  sample_rate: 16000
+  duration_sec: 30.0
+  n_seeds: 5            # 確率的な条件（ノイズ）のシード数。決定的条件は 1
+  conditions:
+    - {name: silence,     kind: silence,               deterministic: true}
+    - {name: noise_floor, kind: white, level_dbfs: -80}
+    - {name: white_lo,    kind: white, level_dbfs: -60}
+    - {name: white_mid,   kind: white, level_dbfs: -40}
+    - {name: white_hi,    kind: white, level_dbfs: -20}
+    - {name: pink_lo,     kind: pink,  level_dbfs: -60}
+    - {name: pink_mid,    kind: pink,  level_dbfs: -40}
+    - {name: pink_hi,     kind: pink,  level_dbfs: -20}
+    - {name: hum,         kind: hum,   level_dbfs: -40, deterministic: true}
+    - {name: tone,        kind: tone,  level_dbfs: -40, freq_hz: 440, deterministic: true}
+
+decode:
+  beam_size: 5
+  temperature: 0.0
+
+results:
+  log_dir: results/logs
+  table_dir: results/tables
+  metrics_dir: results/metrics
+
+# 実行プリセット
+presets:
+  smoke:
+    backends:
+      - {backend: faster_whisper, model: tiny}
+      - {backend: faster_whisper, model: base}
+    conditions: [silence, noise_floor, white_mid, pink_mid, hum]
+    languages: [ja, en, null]        # null = 自動判定
+    variants:
+      - {name: default, condition_on_previous_text: true,  vad_filter: false}
+  # 本実験ステージ1: モデルサイズ・蒸留依存性 (H1-H4)。tiny/base は smoke で取得済み
+  sizes:
+    backends:
+      - {backend: faster_whisper, model: small}
+      - {backend: faster_whisper, model: medium}
+      - {backend: faster_whisper, model: large-v3}
+      - {backend: hf_seq2seq, model: kotoba-tech/kotoba-whisper-v2.0}
+      # CTC 対照モデルは選定後に追加（docs/experiment-design.md H4b 参照）
+    conditions: [silence, noise_floor, white_lo, white_mid, white_hi,
+                 pink_lo, pink_mid, pink_hi, hum, tone]
+    languages: [ja, en, null]
+    variants:
+      - {name: default, condition_on_previous_text: true, vad_filter: false}
+  # 本実験ステージ2: 推論時パラメータによる緩和 (H5)。高速な tiny/base で網羅的に
+  mitigation:
+    backends:
+      - {backend: faster_whisper, model: tiny}
+      - {backend: faster_whisper, model: base}
+    conditions: [silence, noise_floor, white_lo, white_mid, white_hi,
+                 pink_lo, pink_mid, pink_hi, hum, tone]
+    languages: [ja, null]
+    variants:
+      - {name: no_condition, condition_on_previous_text: false, vad_filter: false}
+      - {name: vad,          condition_on_previous_text: true,  vad_filter: true}
+      - {name: no_suppress,  condition_on_previous_text: true,  vad_filter: false,
+         no_speech_threshold: null, log_prob_threshold: null}
+  # 本実験ステージ3: CTC 対照（デコーダ LM なし、H4b）
+  ctc:
+    backends:
+      - {backend: hf_ctc, model: jonatasgrosman/wav2vec2-large-xlsr-53-japanese}
+      - {backend: hf_ctc, model: facebook/wav2vec2-base-960h}
+    conditions: [silence, noise_floor, white_lo, white_mid, white_hi,
+                 pink_lo, pink_mid, pink_hi, hum, tone]
+    languages: [null]
+    variants:
+      - {name: default, condition_on_previous_text: true, vad_filter: false}
+  # 本実験ステージ4: ESC-50 実環境音（VAD すり抜け検証、H3/H5）
+  esc50:
+    backends:
+      - {backend: faster_whisper, model: tiny}
+      - {backend: faster_whisper, model: base}
+      - {backend: faster_whisper, model: large-v3}
+    conditions: [esc50_rain, esc50_keyboard_typing, esc50_clock_tick,
+                 esc50_coughing, esc50_breathing, esc50_laughing]
+    languages: [ja, null]
+    variants:
+      - {name: default, condition_on_previous_text: true, vad_filter: false}
+      - {name: vad,     condition_on_previous_text: true, vad_filter: true}
