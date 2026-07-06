@@ -3,7 +3,8 @@
 - [x] Include public README, experiment design, and reference notes.
 - [x] Include scripts needed to regenerate synthetic non-speech audio and run ASR sweeps.
 - [x] Include aggregate result tables and figures used by the analysis.
-- [x] Include analysis notes, blog draft, and podcast outline/script.
+- [x] Include analysis notes.
+- [x] Exclude blog drafts, blog assets, podcast outlines, and podcast scripts.
 - [x] Exclude generated WAV files under `experiment/data/processed/audio/`.
 - [x] Exclude ESC-50 archive and extracted source audio under `experiment/data/external/`.
 - [x] Exclude raw ASR JSONL logs under `experiment/results/logs/`.

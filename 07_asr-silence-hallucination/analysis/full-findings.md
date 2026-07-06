@@ -129,4 +129,3 @@ wav2vec2 系 CTC モデル 2 種（`jonatasgrosman/wav2vec2-large-xlsr-53-japane
 ## 残タスク
 
 - [ ] kotoba-whisper を faster-whisper スタック（CTranslate2 変換版）で再測定
-- [ ] ブログ記事化（`blog/drafts/`）

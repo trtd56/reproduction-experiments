@@ -43,8 +43,3 @@ python src/aggregate.py                       # 集計表の出力
 - [x] CTC 対照モデル（H4b: wav2vec2 日英とも非空出力 0/76）
 - [x] ESC-50 実環境音（VAD は咳・笑いで 40–90% すり抜け）
 - [x] 図表化（`experiment/results/figures/`）
-- [x] ブログ原稿ドラフト → [blog/drafts/2026-07-02-asr-silence-hallucination-techblog.md](blog/drafts/2026-07-02-asr-silence-hallucination-techblog.md)
-- [x] ポッドキャスト構成案 → [podcast/outlines/2026-07-03-asr-silence-hallucination-solo-outline.md](podcast/outlines/2026-07-03-asr-silence-hallucination-solo-outline.md)
-- [ ] ブログ公開（Zenn 画像差し替え）
-- [x] ポッドキャスト台本 → [podcast/scripts/2026-07-03-asr-silence-hallucination-solo.md](podcast/scripts/2026-07-03-asr-silence-hallucination-solo.md)
-- [ ] ポッドキャスト収録・編集

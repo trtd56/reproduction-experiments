@@ -13,13 +13,14 @@ repository root. This experiment should live under:
 - Synthetic-audio generation, ESC-50 preparation, ASR run, aggregation, and figure scripts.
 - Experiment configuration for smoke, model-size, mitigation, CTC, and ESC-50 sweeps.
 - Curated aggregate CSV tables and PNG figures.
-- Public analysis notes, blog draft, and podcast outline/script.
+- Public analysis notes.
 
 ## Excluded
 
 - Generated WAV files under `experiment/data/processed/audio/`.
 - ESC-50 archive, extracted ESC-50 audio, and other source datasets under `experiment/data/external/`.
 - Raw ASR JSONL logs and console logs under `experiment/results/logs/`.
+- Blog drafts, blog assets, podcast outlines, and podcast scripts.
 - API keys, `.env` files, credentials, model caches, local virtualenvs, and Hugging Face cache data.
 - Paper PDFs or copied external repositories.
 - Generated `__pycache__` directories and `.pyc` files.
@@ -36,9 +37,6 @@ repository root. This experiment should live under:
 ├── analysis/
 │   ├── full-findings.md
 │   └── smoke-findings.md
-├── blog/
-│   ├── assets/asr-silence-hallucination/*.png
-│   └── drafts/2026-07-02-asr-silence-hallucination-techblog.md
 ├── docs/
 │   └── experiment-design.md
 ├── experiment/
@@ -55,10 +53,7 @@ repository root. This experiment should live under:
 │       ├── make_figures.py
 │       ├── prepare_esc50.py
 │       └── run_asr.py
-├── papers/notes/references.md
-└── podcast/
-    ├── outlines/2026-07-03-asr-silence-hallucination-solo-outline.md
-    └── scripts/2026-07-03-asr-silence-hallucination-solo.md
+└── papers/notes/references.md
 ```
 
 ## Suggested GitHub Description
