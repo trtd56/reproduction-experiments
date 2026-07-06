@@ -1,0 +1,2384 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>NIGHTWAVE 98.6</title>
+
+<!--
+  ====================================================================
+  NIGHTWAVE — "THE WAKING SET".
+  A self-contained skeuomorphic 1970s analog radio whose single backlit
+  slide-rule dial-glass is the tuner, the now-playing plate, AND the
+  surface Sam Dusk's voice prints itself onto (the "ignition trail").
+  Pure HTML / CSS / Canvas / SVG / Web Audio. No external assets except
+  the Google webfonts below — all of which fall back to system fonts.
+  Works both at top-level (devserver) AND inside <iframe srcdoc>.
+
+  The DJ, the music, and the calls are all live. The signal meter reflects
+  how well you are tuned to the station (98.6).
+-->
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Marcellus+SC&family=Fraunces:ital,opsz,wght@0,9..144,300..600;1,9..144,300..500&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+
+<style>
+/* ===================================================================
+   1. PALETTE & GLOBALS
+   =================================================================== */
+:root{
+  --walnut-0:#1C0F08;       /* deep matte body              */
+  --walnut-1:#2b1a10;
+  --walnut-2:#1d1109;
+  --walnut-3:#140b05;
+  --walnut-mid:#5A3418;     /* figured grain mid            */
+  --ember:#ff7a18;          /* live word ignition + needle  */
+  --amber:#ffb347;
+  --amber-dim:#c87a2a;
+  --filament:#FFB347;       /* backlight glow + warm-up     */
+  --ivory:#f6e7c8;
+  --ivory-dim:#b9a884;
+  --dial-ivory:#F3E4C0;     /* backlit celluloid (lit)      */
+  --foxed:#9C8E73;          /* ghosted prior lines          */
+  --metal-hi:#d8d2c4;
+  --metal-mid:#8d8678;
+  --metal-lo:#3c382f;
+  --brass:#B8893C;          /* aged metal trim              */
+  --brass-hi:#e7c98a;
+  --brass-dark:#5a3b15;
+  --teal:#3FB8C4;           /* the ONE cool note: 98.6 lock */
+  --ink:#1d1107;            /* engraved text on brass       */
+  --on-air:#ff5a2c;
+  /* mood-driven accent (overwritten by JS) */
+  --mood:#ffb347;
+  --mood-soft:#ffd79b;
+  --dial-glow: 0.0; /* 0..1 signal clarity, drives glow intensity */
+  --warm: 0;        /* 0..1 power-on warm-up progress (JS) */
+  --lock: 0;        /* 0..1 carrier lock (JS) */
+}
+
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;padding:0;min-height:100%}
+body{
+  font-family:"Fraunces",Georgia,"Times New Roman","Hiragino Mincho ProN","Yu Mincho","Hiragino Sans",serif;
+  color:var(--dial-ivory);
+  background:
+    radial-gradient(125% 95% at 50% -8%, #241813 0%, #110a05 52%, #050302 100%);
+  display:flex;align-items:center;justify-content:center;
+  min-height:100vh;overflow-x:hidden;padding:34px 18px;
+  user-select:none;-webkit-user-select:none;
+}
+
+/* warm lamp glow that breathes behind the set; dips/swells with warm-up */
+.room-lamp{
+  position:fixed;inset:0;pointer-events:none;z-index:0;
+  background:radial-gradient(44% 40% at 50% 30%,
+     rgba(255,160,70, calc(0.06 + 0.22*var(--warm))) 0%,
+     rgba(255,120,40,0.05) 44%, transparent 72%);
+  transition:opacity .8s ease;
+}
+body.powered .room-lamp{ opacity:1; }
+body.intimate .room-lamp{ /* direct_address: dim the room */
+  opacity:.45;
+}
+
+/* ===================================================================
+   2. STAGE + CABINET (figured walnut, perspective, feet)
+   =================================================================== */
+.stage{position:relative;z-index:1;perspective:1700px}
+.cabinet{
+  position:relative;
+  width:min(94vw, 860px);
+  transform:rotateX(4deg);
+  transform-origin:50% 100%;
+  padding:22px 26px 26px;
+  border-radius:14px;
+  background:
+    linear-gradient(90deg, rgba(255,220,150,.06), transparent 18%, rgba(0,0,0,.14) 52%, transparent 82%, rgba(255,220,150,.04)),
+    radial-gradient(130% 110% at 30% 0%, var(--walnut-mid) 0%, var(--walnut-1) 46%, var(--walnut-0) 100%);
+  box-shadow:
+    inset 0 2px 0 rgba(255,211,145,.16),
+    inset 0 -38px 72px rgba(0,0,0,.55),
+    0 40px 80px -18px rgba(0,0,0,.9);
+  border:1px solid rgba(255,200,140,.08);
+}
+/* figured-walnut grain via SVG turbulence (gallery-grade, not flat gradients) */
+.cabinet::before{
+  content:"";position:absolute;inset:0;border-radius:14px;pointer-events:none;
+  background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='240' height='240'><filter id='g'><feTurbulence type='fractalNoise' baseFrequency='0.012 0.09' numOctaves='3' seed='7'/><feColorMatrix type='matrix' values='0 0 0 0 0  0 0 0 0 0  0 0 0 0 0  0 0 0 0.5 0'/></filter><rect width='100%25' height='100%25' filter='url(%23g)'/></svg>");
+  background-size:520px 100%;
+  mix-blend-mode:overlay;opacity:.5;
+}
+/* rubber feet */
+.foot{position:absolute;bottom:-13px;width:104px;height:20px;border-radius:0 0 7px 7px;
+  background:linear-gradient(180deg,#4a3420 0%,#241710 55%,#0c0805 100%);
+  border:1px solid rgba(0,0,0,.55);border-top:none;
+  box-shadow:0 12px 20px rgba(0,0,0,.6), inset 0 2px 0 rgba(255,214,150,.22), inset 0 -3px 5px rgba(0,0,0,.55)}
+.foot.l{left:88px}.foot.r{right:88px}
+
+/* inset faceplate */
+.bezel{
+  position:relative;
+  border-radius:10px;
+  padding:18px;
+  background:linear-gradient(180deg, #160d06, #0c0703);
+  border:1px solid rgba(181,138,58,.3);
+  box-shadow:
+    inset 0 0 0 1px rgba(255,228,177,.05),
+    inset 0 16px 40px rgba(0,0,0,.5);
+}
+
+/* ===================================================================
+   3. HEADER — brushed-brass strip, engraved wordmark, FM, ON AIR tube
+   =================================================================== */
+.topband{
+  display:flex;align-items:center;justify-content:space-between;gap:14px;
+  padding:9px 16px;margin-bottom:14px;border-radius:7px;
+  background:
+    repeating-linear-gradient(90deg, rgba(255,255,255,.05) 0 1px, rgba(0,0,0,.05) 2px 3px),
+    linear-gradient(180deg, var(--brass-hi) 0%, var(--brass) 46%, var(--brass-dark) 100%);
+  border:1px solid rgba(0,0,0,.5);
+  box-shadow:0 1px 1px rgba(255,255,255,.4) inset, 0 -2px 3px rgba(0,0,0,.4) inset, 0 2px 6px rgba(0,0,0,.4);
+}
+.brandplate{display:flex;align-items:baseline;line-height:1}
+.brandplate .name{
+  font-family:"Marcellus SC",Georgia,"Hiragino Mincho ProN","Yu Mincho","Hiragino Sans",serif;
+  font-size:23px;letter-spacing:.30em;color:var(--ink);
+  /* engraved into the brass */
+  text-shadow:0 1px 0 rgba(255,240,200,.45), 0 -1px 1px rgba(0,0,0,.55);
+}
+.brandplate .sub{
+  font-family:"Space Mono","Osaka-Mono","MS Gothic",monospace;font-size:12px;letter-spacing:.12em;color:#3a2a12;
+  padding-left:12px;border-left:1px solid rgba(0,0,0,.3);margin-left:12px;
+}
+.topband .right{display:flex;align-items:center;gap:14px}
+.hostplate{
+  font-family:"Marcellus SC",Georgia,"Hiragino Mincho ProN","Yu Mincho","Hiragino Sans",serif;font-size:9.5px;letter-spacing:.22em;color:#2b2114;
+  padding:5px 10px;border-radius:3px;
+  background:linear-gradient(180deg,#d6c39a,#7a6240);
+  border:1px solid rgba(0,0,0,.5);box-shadow:inset 0 1px 0 rgba(255,255,255,.4);
+}
+
+/* ON AIR tube */
+.onair{display:flex;align-items:center;gap:8px}
+.onair .tube{
+  width:13px;height:13px;border-radius:50%;
+  background:radial-gradient(circle at 35% 30%, #5a2a1a, #2a0f08);
+  box-shadow:0 0 0 1px rgba(0,0,0,.5) inset;
+  transition:background .3s, box-shadow .3s;
+}
+.onair .label{
+  font-family:"Space Mono","Osaka-Mono","MS Gothic",monospace;font-size:10px;letter-spacing:.28em;font-weight:700;color:#3a2a12;
+  transition:color .3s, text-shadow .3s;
+}
+body.broadcasting .onair .tube{
+  background:radial-gradient(circle at 35% 30%, #ffd0a0, var(--on-air));
+  box-shadow:0 0 10px var(--on-air), 0 0 22px rgba(255,90,44,0.6), 0 0 0 1px rgba(0,0,0,0.4) inset;
+}
+body.broadcasting .onair .label{
+  color:#2a1c0c;text-shadow:0 0 7px rgba(255,150,80,.6);
+}
+
+/* ===================================================================
+   4. THE HERO — one wide backlit slide-rule DIAL-GLASS that talks
+   =================================================================== */
+.dialwrap{position:relative;border-radius:9px}
+.dial-frame{
+  position:relative;border-radius:9px;overflow:hidden;
+  height:300px;
+  border:1px solid rgba(0,0,0,.6);
+  background:
+    linear-gradient(180deg, rgba(20,12,6,.9), rgba(10,6,3,.96));
+  box-shadow:inset 0 0 0 1px rgba(255,228,177,.05), inset 0 22px 50px rgba(0,0,0,.6);
+  cursor:ew-resize;
+  touch-action:none;
+}
+/* backlit celluloid — intensity follows warm-up */
+.dial-light{
+  position:absolute;inset:0;pointer-events:none;z-index:1;
+  background:
+    radial-gradient(120% 150% at var(--needle-x,50%) 120%, rgba(255,179,71, calc(.22*var(--warm) + .30*var(--dial-glow))) 0%, transparent 60%),
+    linear-gradient(180deg, rgba(243,228,192, calc(.05*var(--warm))) 0%, rgba(255,179,71, calc(.10*var(--warm))) 100%);
+  mix-blend-mode:screen;
+  transition:opacity .3s;
+}
+/* filament bloom mask used only during warm-up (radius driven by --warm) */
+.filament{
+  position:absolute;inset:0;pointer-events:none;z-index:1;opacity:calc(1 - var(--lock));
+  background:radial-gradient(circle at 50% 78%,
+    rgba(255,200,120, calc(.5*var(--warm))) 0%,
+    rgba(255,160,70, calc(.18*var(--warm))) calc(8% + 60%*var(--warm)),
+    transparent calc(20% + 70%*var(--warm)));
+  mix-blend-mode:screen;
+}
+/* glass reflection + dust (dd.md polish) */
+.sheen{
+  position:absolute;inset:0;pointer-events:none;z-index:6;mix-blend-mode:screen;
+  background:
+    linear-gradient(106deg, rgba(255,255,255,.16) 0%, rgba(255,255,255,.05) 16%, transparent 19% 70%, rgba(255,255,255,.05) 72%, transparent 80%),
+    radial-gradient(80% 60% at 50% 0%, rgba(255,245,210,.06), transparent 65%);
+}
+.sheen .dust{
+  position:absolute;inset:0;opacity:.16;
+  background:
+    radial-gradient(circle at 17% 34%, #fff 0 1px, transparent 1.5px),
+    radial-gradient(circle at 68% 58%, #fff 0 1px, transparent 1.5px),
+    radial-gradient(circle at 45% 18%, #fff 0 1px, transparent 1.5px);
+}
+
+/* frequency scale across the top of the glass (built by JS) */
+.dial-canvas{position:absolute;top:0;left:0;right:0;height:46px;width:100%;z-index:2;pointer-events:none}
+
+/* the tuning needle */
+.needle{
+  position:absolute;top:0;bottom:0;width:2px;left:50%;
+  transform:translateX(-50%);
+  background:linear-gradient(180deg, var(--ember), rgba(255,122,24,.15));
+  box-shadow:0 0 7px rgba(255,122,24,0.8);
+  z-index:5;outline:none;
+}
+.needle::after{ /* knob grip at top */
+  content:"";position:absolute;top:5px;left:50%;transform:translateX(-50%);
+  width:8px;height:8px;border-radius:50%;
+  background:var(--ember);box-shadow:0 0 9px var(--ember);
+}
+.needle:focus-visible{box-shadow:0 0 0 2px #fff, 0 0 14px var(--amber)}
+.dial-frame:focus-within .needle::after{outline:2px solid var(--amber);outline-offset:2px}
+
+/* freq readout printed on the glass, Space Mono */
+.freq-readout{
+  position:absolute;left:16px;top:10px;z-index:5;
+  font-family:"Space Mono","Osaka-Mono","MS Gothic",monospace;
+  font-variant-numeric:tabular-nums;
+  font-size:12px;font-weight:700;letter-spacing:.06em;
+  color:rgba(243,228,192, calc(.45 + .5*var(--warm)));
+}
+/* the ONE cool accent: teal "LOCKED" cue at perfect 98.6 lock */
+.lockchip{
+  position:absolute;right:14px;top:10px;z-index:5;
+  font-family:"Space Mono","Osaka-Mono","MS Gothic",monospace;
+  font-size:10px;letter-spacing:.2em;font-weight:700;
+  color:var(--teal);text-shadow:0 0 10px rgba(63,184,196,.7);
+  opacity:0;transition:opacity .3s;
+}
+.dialwrap.locked .lockchip{opacity:1}
+
+/* the printed transcript: Sam Dusk's voice, on the glass (the ignition trail) */
+.transcript{
+  position:absolute;left:0;right:0;top:54px;bottom:46px;z-index:3;
+  display:flex;flex-direction:column;justify-content:flex-end;
+  padding:0 34px;gap:9px;overflow:hidden;
+  -webkit-mask-image:linear-gradient(180deg, transparent 0, #000 22%, #000 100%);
+  mask-image:linear-gradient(180deg, transparent 0, #000 22%, #000 100%);
+}
+.line{
+  font-family:"Fraunces",Georgia,"Hiragino Mincho ProN","Yu Mincho","Hiragino Sans",serif;font-weight:380;font-size:24px;line-height:1.34;
+  color:var(--foxed);opacity:0;transform:translateY(8px);
+  transition:opacity 1.1s ease, transform 1.1s ease, color 1.1s ease;
+  text-wrap:balance;
+}
+.line.in{opacity:1;transform:translateY(0)}
+.line.past{color:var(--foxed);opacity:.5}
+.line.current{color:var(--dial-ivory)}
+.line .w{opacity:.18;filter:blur(2px);
+  transition:opacity .5s ease, filter .5s ease, color .5s ease, text-shadow .5s ease}
+.line .w.spoken{opacity:1;filter:blur(0);color:var(--ember);text-shadow:0 0 16px rgba(255,122,24,.55)}
+.line .w.said{opacity:1;filter:blur(0);color:var(--dial-ivory);text-shadow:none}
+.line.status{font-family:"Space Mono","Osaka-Mono","MS Gothic",monospace;font-size:14px;font-weight:400;
+  letter-spacing:.06em;color:var(--amber);opacity:1;transform:none}
+.line.fragment{font-style:italic;color:var(--foxed);filter:blur(.3px);letter-spacing:.08em;opacity:1;transform:none}
+.line .caller-said{display:block;font-family:"Space Mono","Osaka-Mono","MS Gothic",monospace;
+  font-size:11px;color:var(--foxed);letter-spacing:.03em;margin-bottom:6px}
+
+/* now-playing, printed on the glass in mono */
+.nowplaying{
+  position:absolute;left:34px;right:34px;bottom:14px;z-index:4;
+  display:flex;align-items:center;gap:9px;
+  font-family:"Space Mono","Osaka-Mono","MS Gothic",monospace;font-size:12px;letter-spacing:.02em;
+  color:rgba(243,228,192, calc(.35 + .5*var(--warm)));
+}
+.nowplaying .np-eq{display:inline-flex;gap:2px;align-items:flex-end;height:11px;opacity:.35}
+.nowplaying.playing .np-eq{opacity:1}
+.nowplaying .np-eq i{width:3px;height:4px;background:var(--ember);border-radius:1px;box-shadow:0 0 6px var(--ember)}
+.nowplaying.playing .np-eq i{animation:eq .9s ease-in-out infinite}
+.nowplaying.playing .np-eq i:nth-child(2){animation-delay:.15s}
+.nowplaying.playing .np-eq i:nth-child(3){animation-delay:.30s}
+.nowplaying.playing .np-eq i:nth-child(4){animation-delay:.45s}
+@keyframes eq{0%,100%{height:4px}50%{height:11px}}
+.nowplaying .np-text{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.nowplaying.playing .np-text{color:var(--amber)}
+.nowplaying .np-req{color:var(--brass)}
+
+/* ===================================================================
+   5. CONTROL DECK (grille + analog VU, reels, power, handset, signal)
+   =================================================================== */
+.deck{
+  display:grid;
+  grid-template-columns:1.15fr .9fr 1.05fr;
+  gap:14px;align-items:stretch;margin-top:14px;
+}
+.panel{
+  position:relative;border-radius:9px;padding:12px;
+  background:linear-gradient(180deg,#1b110a,#0c0703);
+  border:1px solid rgba(255,214,154,.10);
+  box-shadow:inset 0 2px 8px rgba(0,0,0,.6), inset 0 0 0 1px rgba(255,214,154,.03);
+  display:flex;flex-direction:column;align-items:center;gap:10px;
+}
+.panel .cap{
+  font-family:"Space Mono","Osaka-Mono","MS Gothic",monospace;font-size:9px;letter-spacing:.26em;color:#8a7350;text-align:center;
+}
+
+/* speaker grille (perforated cloth) */
+.speaker-grille{
+  width:100%;flex:1;min-height:62px;border-radius:6px;
+  background:
+    radial-gradient(circle, rgba(246,231,200,.34) 0 1px, transparent 1.5px) 0 0 / 9px 9px,
+    linear-gradient(180deg,#241710,#0d0805);
+  border:1px solid rgba(255,214,154,.10);
+  box-shadow:inset 0 2px 8px rgba(0,0,0,.65), inset 0 0 0 1px rgba(255,214,154,.03);
+}
+
+/* analog VU meter canvas */
+.vu-canvas{display:block;width:100%;height:74px;border-radius:6px}
+
+/* tape reels */
+.reels{display:flex;gap:18px;align-items:center;justify-content:center}
+.reel{
+  position:relative;width:46px;height:46px;border-radius:50%;
+  background:
+    repeating-conic-gradient(from 0deg, rgba(255,220,160,.22) 0 2.5deg, transparent 2.5deg 120deg),
+    radial-gradient(circle at 50% 50%, #20140c 0 10px, #3a2616 11px 13px, #18100a 14px);
+  border:1px solid rgba(255,214,154,.12);
+  box-shadow:0 4px 10px rgba(0,0,0,0.6), 0 0 0 1px rgba(255,200,140,0.06) inset;
+}
+.reel::before{
+  content:"";position:absolute;inset:6px;border-radius:50%;border:1px dashed rgba(255,214,154,.18);
+}
+.reel .hub{
+  position:absolute;inset:17px;border-radius:50%;
+  background:radial-gradient(circle at 40% 35%, var(--metal-hi), var(--metal-lo));
+}
+/* tape reels turn the whole time the deck is on (powered), not just over voice */
+body.broadcasting .reel{animation:spin 3.2s linear infinite}
+body.broadcasting .reel.rev{animation-direction:reverse}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+/* power knob — the ritual object */
+.power-wrap{display:flex;flex-direction:column;align-items:center;gap:10px;justify-content:center;flex:1}
+.power-knob{
+  position:relative;width:96px;height:96px;border-radius:50%;
+  cursor:pointer;border:none;padding:0;
+  background:radial-gradient(circle at 38% 32%, #6a5238 0%, #3a2a18 46%, #1a120a 100%);
+  border:1px solid rgba(0,0,0,.6);
+  box-shadow:0 8px 18px rgba(0,0,0,.6), inset 0 2px 3px rgba(255,220,170,.25), inset 0 -8px 16px rgba(0,0,0,.6);
+  transition:transform .5s cubic-bezier(.34,1.56,.64,1), box-shadow .3s ease;
+  color:var(--ivory-dim);
+}
+.power-knob::after{ /* pointer notch */
+  content:"";position:absolute;top:9px;left:50%;width:4px;height:26px;margin-left:-2px;
+  border-radius:3px;background:linear-gradient(180deg,var(--ivory-dim),#7a4a14);
+  box-shadow:0 0 4px rgba(0,0,0,0.6);transition:background .3s, box-shadow .3s;
+}
+.power-knob .pwr-txt{
+  position:absolute;bottom:-22px;left:50%;transform:translateX(-50%);white-space:nowrap;
+  font-family:"Space Mono","Osaka-Mono","MS Gothic",monospace;font-size:9px;letter-spacing:.18em;font-weight:700;
+  pointer-events:none;color:#8a7350;
+}
+.power-knob:hover{box-shadow:0 9px 20px rgba(0,0,0,.65), inset 0 2px 3px rgba(255,220,170,.3), inset 0 -8px 16px rgba(0,0,0,.6)}
+.power-knob:focus-visible{outline:2px solid var(--filament);outline-offset:6px}
+body.powered .power-knob{transform:rotate(28deg)}
+body.powered .power-knob::after{background:linear-gradient(180deg,#fff,var(--ember));box-shadow:0 0 10px var(--ember),0 0 18px rgba(255,90,44,0.6)}
+body.powered .power-knob .pwr-txt{transform:translateX(-50%) rotate(-28deg);color:#ffd2b0}
+
+/* signal-integrity gauge (diegetic SIGNAL meter) */
+.gauge-wrap{display:flex;flex-direction:column;align-items:stretch;gap:6px;justify-content:center;width:100%}
+.gauge{
+  position:relative;width:100%;height:11px;border-radius:6px;
+  background:linear-gradient(180deg, rgba(0,0,0,.5), rgba(255,255,255,.05));overflow:hidden;
+  box-shadow:0 0 0 1px rgba(0,0,0,0.55) inset, inset 0 1px 2px rgba(0,0,0,.5);
+}
+.gauge .ticks{display:none}
+.gauge .fill{
+  position:absolute;left:0;top:0;bottom:0;width:0%;
+  background:linear-gradient(90deg, var(--ember), var(--filament));
+  box-shadow:0 0 10px rgba(255,150,70,.5);
+  transition:width .6s cubic-bezier(.2,.7,.2,1), background .6s;
+}
+.gauge .stagedot{
+  position:absolute;top:50%;width:6px;height:6px;border-radius:50%;margin-top:-3px;
+  background:#fff;box-shadow:0 0 8px #fff;left:0;transition:left .6s;
+}
+/* teal tint of the signal bar ONLY at perfect 98.6 lock */
+body.locked .gauge .fill{
+  background:linear-gradient(90deg, var(--filament), var(--teal));
+  box-shadow:0 0 12px rgba(63,184,196,.6);
+}
+
+/* handset / call-in — physical hardware, not an app pill */
+.handset-row{display:flex;flex-direction:column;align-items:center;gap:8px;justify-content:center;width:100%}
+.handset{
+  position:relative;display:flex;align-items:center;gap:10px;justify-content:center;
+  width:100%;padding:13px 16px;border-radius:8px;cursor:pointer;border:none;
+  font-family:inherit;color:var(--dial-ivory);
+  background:linear-gradient(180deg,#231812,#0f0906);
+  border:1px solid rgba(255,215,160,.16);
+  box-shadow:inset 0 1px 0 rgba(255,220,170,.08), inset 0 -10px 20px rgba(0,0,0,.55), 0 9px 18px rgba(0,0,0,.55);
+  transition:transform .12s ease, box-shadow .25s ease;
+}
+.handset .ic{
+  width:30px;height:30px;border-radius:7px;
+  display:flex;align-items:center;justify-content:center;
+  background:linear-gradient(180deg,#c89b55,#5d3b16);
+  color:#1d1107;box-shadow:inset 0 1px 0 rgba(255,255,255,.3);
+}
+.handset .ic svg{width:16px;height:16px}
+.handset .ht{display:flex;flex-direction:column;align-items:flex-start;line-height:1.15}
+.handset .ht b{font-family:"Space Mono","Osaka-Mono","MS Gothic",monospace;font-size:11px;letter-spacing:.16em}
+.handset .ht span{font-family:"Space Mono","Osaka-Mono","MS Gothic",monospace;font-size:8px;letter-spacing:.18em;color:var(--ivory-dim)}
+.handset:disabled{opacity:.4;cursor:not-allowed}
+.handset:focus-visible{outline:2px solid var(--filament);outline-offset:4px}
+.handset.recording{
+  background:linear-gradient(180deg,#7a1f12,#3a0d08);
+  box-shadow:0 0 0 2px var(--on-air), 0 0 26px rgba(255,90,44,0.7);
+  animation:rec-pulse 1s ease-in-out infinite;
+}
+.handset.recording .ic{background:linear-gradient(180deg,#ff8a6a,var(--on-air))}
+@keyframes rec-pulse{50%{box-shadow:0 0 0 2px var(--on-air),0 0 40px rgba(255,90,44,0.95)}}
+
+/* small ghost buttons (NEXT / captions) — physical rocker hardware */
+.minirow{display:flex;gap:10px;align-items:center;justify-content:center;margin-top:14px;flex-wrap:wrap}
+.ghost{
+  font-family:"Space Mono","Osaka-Mono","MS Gothic",monospace;font-size:10px;letter-spacing:.16em;font-weight:700;
+  color:#25180d;cursor:pointer;text-transform:uppercase;
+  border:1px solid #1b150f;border-radius:4px;padding:8px 14px;
+  background:linear-gradient(180deg,#d0c5ae 0%,#8f826d 48%,#50483a 100%);
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.45), inset 0 -2px 3px rgba(0,0,0,.38), 0 3px 8px rgba(0,0,0,.45);
+  transition:all .2s;
+}
+.ghost:hover{color:#1b1209;border-color:var(--amber);
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.5), 0 0 0 2px rgba(255,179,71,.5), 0 4px 10px rgba(0,0,0,.5)}
+.ghost:focus-visible{outline:2px solid var(--filament);outline-offset:2px}
+.ghost[aria-pressed="true"]{color:#1d1107;background:linear-gradient(180deg,#ffd18b,#b57928);border-color:var(--brass-dark)}
+
+/* info "i" button — sits in the control row, opens the station log */
+.ghost-i{
+  width:34px;height:34px;padding:0;border-radius:50%;
+  font-family:"Marcellus SC",Georgia,"Hiragino Mincho ProN","Yu Mincho","Hiragino Sans",serif;font-size:15px;font-style:italic;
+  letter-spacing:0;text-transform:none;line-height:1;
+  display:inline-flex;align-items:center;justify-content:center;
+}
+
+/* ===== station-log overlay (every innovation, one line each) ===== */
+.innov-scrim{
+  position:fixed;inset:0;z-index:50;display:flex;align-items:center;justify-content:center;
+  padding:24px;opacity:0;transition:opacity .28s ease;
+  background:radial-gradient(120% 120% at 50% 0%, rgba(20,11,5,.84), rgba(7,4,2,.95));
+  -webkit-backdrop-filter:blur(3px);backdrop-filter:blur(3px);
+}
+.innov-scrim.open{opacity:1}
+.innov-scrim[hidden]{display:none}
+.innov-panel{
+  position:relative;width:min(940px,100%);max-height:88vh;overflow:auto;
+  padding:30px clamp(20px,4vw,34px) 34px;
+  background:linear-gradient(180deg,#24160a 0%,#180d05 100%);
+  border:1px solid var(--brass-dark);border-radius:14px;
+  box-shadow:0 30px 90px rgba(0,0,0,.62), inset 0 1px 0 rgba(231,201,138,.16);
+  transform:translateY(14px) scale(.985);transition:transform .28s ease;
+}
+.innov-scrim.open .innov-panel{transform:none}
+.innov-close{
+  position:absolute;top:12px;right:14px;width:32px;height:32px;border-radius:50%;
+  border:1px solid var(--brass-dark);background:rgba(255,236,200,.05);color:var(--brass-hi);
+  font-family:"Space Mono","Osaka-Mono","MS Gothic",monospace;font-size:18px;line-height:1;cursor:pointer;transition:all .2s;
+}
+.innov-close:hover{background:rgba(255,236,200,.12);color:#fff}
+.innov-close:focus-visible{outline:2px solid var(--filament);outline-offset:2px}
+.innov-eyebrow{
+  font-family:"Space Mono","Osaka-Mono","MS Gothic",monospace;font-size:9.5px;letter-spacing:.34em;font-weight:700;color:var(--brass);
+}
+.innov-title{
+  font-family:"Marcellus SC",Georgia,"Hiragino Mincho ProN","Yu Mincho","Hiragino Sans",serif;font-weight:400;font-size:clamp(22px,4vw,30px);
+  letter-spacing:.01em;color:var(--dial-ivory);margin:.32em 0 .12em;
+}
+.innov-sub{
+  font-family:"Fraunces",Georgia,"Hiragino Mincho ProN","Yu Mincho","Hiragino Sans",serif;font-size:14px;font-style:italic;color:var(--foxed);
+  max-width:48ch;margin:0;
+}
+.innov-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(232px,1fr));gap:13px;margin-top:24px}
+.innov-card{
+  border:1px solid rgba(184,137,60,.20);border-top:2px solid var(--brass);border-radius:8px;
+  padding:13px 15px 15px;background:rgba(255,236,200,.028);transition:background .2s,border-color .2s;
+}
+.innov-card:hover{background:rgba(255,236,200,.06);border-top-color:var(--brass-hi)}
+.innov-card .tag{
+  display:block;font-family:"Space Mono","Osaka-Mono","MS Gothic",monospace;font-size:8px;letter-spacing:.24em;font-weight:700;
+  color:var(--brass);text-transform:uppercase;margin-bottom:7px;
+}
+.innov-card h3{
+  font-family:"Marcellus SC",Georgia,"Hiragino Mincho ProN","Yu Mincho","Hiragino Sans",serif;font-weight:400;font-size:15px;letter-spacing:.01em;
+  color:var(--dial-ivory);margin:0 0 6px;
+}
+.innov-card p{
+  font-family:"Fraunces",Georgia,"Hiragino Mincho ProN","Yu Mincho","Hiragino Sans",serif;font-size:12.5px;line-height:1.42;color:var(--foxed);margin:0;
+}
+@media (max-width:560px){ .innov-grid{grid-template-columns:1fr} }
+@media (prefers-reduced-motion:reduce){ .innov-scrim,.innov-panel{transition:none} }
+
+/* hidden live-region for captions when the glass is too noisy for a screen reader */
+.sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);border:0}
+
+/* ===================================================================
+   6. MOTION / RESPONSIVE
+   =================================================================== */
+@media (max-width:680px){
+  body{overflow:auto;align-items:flex-start}
+  .cabinet{transform:none;width:min(96vw,520px);padding:16px}
+  .foot{display:none}
+  .brandplate .name{font-size:17px;letter-spacing:.20em}
+  .dial-frame{height:260px}
+  .line{font-size:20px}
+  .deck{grid-template-columns:1fr 1fr;gap:10px}
+  .deck .panel:nth-child(2){grid-column:1 / -1;order:-1}
+}
+@media (prefers-reduced-motion:reduce){
+  .cabinet{transform:none}
+  body.broadcasting .reel{animation:none}
+  .handset.recording{animation:none}
+  .room-lamp{transition:none}
+  .line, .line .w{transition:none}
+  *{scroll-behavior:auto}
+}
+/* glitch flicker, applied transiently by JS (skipped under reduced-motion) */
+.dial-frame.flick{animation:flick .5s steps(2) 1}
+@keyframes flick{0%,100%{filter:none}20%{filter:brightness(2.2) hue-rotate(-12deg)}45%{filter:brightness(.4)}70%{filter:brightness(1.8)}}
+</style>
+</head>
+<body>
+<div class="room-lamp" aria-hidden="true"></div>
+
+<div class="stage">
+<main class="cabinet" role="application" aria-label="NIGHTWAVE アナログラジオ">
+  <i class="foot l" aria-hidden="true"></i><i class="foot r" aria-hidden="true"></i>
+  <div class="bezel">
+
+    <!-- ===== HEADER: brushed-brass strip ===== -->
+    <div class="topband">
+      <div class="brandplate">
+        <span class="name">NIGHTWAVE</span>
+        <span class="sub">98.6 FM</span>
+      </div>
+      <div class="right">
+        <span class="hostplate" aria-hidden="true">宵野サム &middot; オールナイトデスク</span>
+        <div class="onair" role="status" aria-live="polite">
+          <span class="tube" aria-hidden="true"></span>
+          <span class="label" id="onairLabel">スタンバイ</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- ===== THE HERO: backlit slide-rule dial-glass that talks ===== -->
+    <div class="dialwrap" id="dialwrap">
+      <div class="dial-frame" id="dialFrame">
+        <div class="dial-light" id="dialLight" aria-hidden="true"></div>
+        <div class="filament" aria-hidden="true"></div>
+        <canvas class="dial-canvas" id="dialCanvas" aria-hidden="true"></canvas>
+        <span class="freq-readout" id="freqReadout">98.6</span>
+        <span class="lockchip">98.6 &middot; 同調</span>
+        <div class="needle" id="needle"
+             role="slider" tabindex="0"
+             aria-label="チューニングダイヤル（FM周波数）"
+             aria-valuemin="87.5" aria-valuemax="108.0" aria-valuenow="98.6"
+             aria-valuetext="98.6メガヘルツ"></div>
+
+        <!-- the printed transcript: Sam Dusk's voice prints here -->
+        <div class="transcript" id="transcript"></div>
+
+        <!-- now-playing, printed on the same glass -->
+        <div class="nowplaying" id="nowPlaying" aria-live="polite">
+          <span class="np-eq" aria-hidden="true"><i></i><i></i><i></i><i></i></span>
+          <span class="np-text" id="npText">NIGHTWAVE — 夜通し、毎晩。</span>
+        </div>
+
+        <div class="sheen" aria-hidden="true"><span class="dust"></span></div>
+      </div>
+    </div>
+
+    <!-- live caption text for assistive tech (the glass is the visual surface) -->
+    <div class="sr-only" id="caption" role="log" aria-live="polite" aria-atomic="false">
+      電源ノブを回して、周波数を合わせて&hellip;
+    </div>
+
+    <!-- ===== control deck ===== -->
+    <div class="deck">
+
+      <!-- left: speaker grille + analog VU -->
+      <div class="panel">
+        <span class="cap">スピーカー &middot; VU</span>
+        <div class="speaker-grille" aria-hidden="true"></div>
+        <canvas class="vu-canvas" id="vuCanvas" width="320" height="74" aria-hidden="true"></canvas>
+      </div>
+
+      <!-- center: power -->
+      <div class="panel">
+        <span class="cap">電源</span>
+        <div class="power-wrap">
+          <button class="power-knob" id="powerKnob"
+                  aria-pressed="false" aria-label="電源。オンにしてNIGHTWAVEに同調します。">
+            <span class="pwr-txt" id="pwrTxt">電源 &middot; 切</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- right: tape reels + handset + signal meter -->
+      <div class="panel">
+        <span class="cap">テープ</span>
+        <div class="reels" aria-hidden="true">
+          <div class="reel" id="reelL"><span class="hub"></span></div>
+          <div class="reel rev" id="reelR"><span class="hub"></span></div>
+        </div>
+        <span class="cap">電話出演</span>
+        <div class="handset-row">
+          <button class="handset" id="handset" disabled
+                  aria-label="電話出演。タップしてDJに話しかけ、もう一度タップで送信します。">
+            <span class="ic" aria-hidden="true">
+              <svg viewBox="0 0 24 24" fill="currentColor"><path d="M6.6 10.8c1.4 2.8 3.8 5.1 6.6 6.6l2.2-2.2c.3-.3.7-.4 1-.2 1.1.4 2.3.6 3.6.6.6 0 1 .4 1 1V20c0 .6-.4 1-1 1C10.6 21 3 13.4 3 4c0-.6.4-1 1-1h3.5c.6 0 1 .4 1 1 0 1.2.2 2.4.6 3.6.1.4 0 .8-.3 1l-2.2 2.2z"/></svg>
+            </span>
+            <span class="ht"><b>電話する</b><span>タップで話す</span></span>
+          </button>
+        </div>
+        <span class="cap" id="stageCap">信号</span>
+        <div class="gauge-wrap">
+          <div class="gauge" id="gauge" role="meter" aria-label="信号強度"
+               aria-valuemin="0" aria-valuemax="100" aria-valuenow="0">
+            <div class="ticks" aria-hidden="true"></div>
+            <div class="fill" id="gaugeFill"></div>
+            <div class="stagedot" id="gaugeDot" aria-hidden="true"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ===== small controls ===== -->
+    <div class="minirow">
+      <button class="ghost" id="nextBtn" aria-label="次のセグメント">&#9193; 次のセグメント</button>
+      <button class="ghost" id="capToggle" aria-pressed="true" aria-label="字幕の切り替え">字幕：オン</button>
+      <button class="ghost ghost-i" id="infoBtn" aria-haspopup="dialog" aria-label="この局について">i</button>
+    </div>
+  </div>
+</main>
+</div>
+
+<!-- station-log overlay: every innovation in the project, one line each -->
+<div class="innov-scrim" id="innovScrim" hidden>
+  <div class="innov-panel" role="dialog" aria-modal="true" aria-labelledby="innovTitle">
+    <button class="innov-close" id="innovClose" aria-label="閉じる">&times;</button>
+    <div class="innov-eyebrow">NIGHTWAVE &middot; 局内日誌</div>
+    <h2 class="innov-title" id="innovTitle">この局を動かしているもの</h2>
+    <p class="innov-sub">自律で走る深夜のAIラジオ局 &mdash; 小さなモデルひとつが、番組のすべてを回しています。</p>
+    <div class="innov-grid" id="innovGrid"></div>
+  </div>
+</div>
+
+<script>
+"use strict";
+/* ===================================================================
+   NIGHTWAVE radio controller — "THE WAKING SET"
+   Sections:
+     A. Canonical arc contract (mirrors space/arc.py)
+     B. State
+     C. DOM refs
+     D. Audio engine (one AudioContext, radio chain, hiss bed, VU)
+     E. Dial / tuning
+     F. Signal meter (diegetic, tuning-driven)
+     G. Captions (karaoke ignition trail on the glass)
+     H. Networking (/api/broadcast, /api/call) with mock fallback
+     I. Broadcast loop & arc cues
+     J. Call-in (tap-to-talk)
+     K. Power-on warm-up, wiring, seed controls, rAF loop
+   =================================================================== */
+
+/* ---- A. CANONICAL ARC CONTRACT (must match arc.py exactly) -------- */
+// Bands: 0-19 oblivious | 20-39 uneasy | 40-59 questioning |
+//        60-79 dawning | 80-100 acceptance
+function meterToStage(m){
+  if (m < 20) return "oblivious";
+  if (m < 40) return "uneasy";
+  if (m < 60) return "questioning";
+  if (m < 80) return "dawning";
+  return "acceptance";
+}
+const STAGE_MID = { oblivious:10, uneasy:30, questioning:50, dawning:70, acceptance:90 };
+const TIME_DRIP_PER_MIN = 6;   // contract: client adds 6 pts / minute
+const NIGHTWAVE_FREQ = 98.6;   // the station
+const EGG_FREQ = 87.7;         // easter-egg whisper
+const LOCK_BAND = 0.35;        // +/- MHz that still counts as "tuned in"
+const FREQ_MIN = 87.5, FREQ_MAX = 108.0;
+
+// mood -> accent color [main, soft] (dial glow / gauge / marker)
+const MOOD_COLOR = {
+  warm:      ["#ffb347","#ffe0b0"],
+  nostalgic: ["#ff9d5c","#ffd0a0"],
+  uneasy:    ["#d98a4a","#e8b88a"],
+  searching: ["#c8a06a","#e6d2a8"],
+  hollow:    ["#8fa6b3","#c2d2db"],
+  tender:    ["#ff8a8a","#ffd0d0"]
+};
+
+/* ---- B. STATE ----------------------------------------------------- */
+const State = {
+  powered:false,
+  meter:0,
+  stage:"oblivious",
+  freq:NIGHTWAVE_FREQ,
+  mood:"warm",
+  captionsOn:true,
+  busy:false,         // a request is in flight
+  recording:false,
+  lastVoiceEnd:0,     // perf ms when last segment finished (silence loop)
+  reducedMotion:false,
+  eggPlayed:false,
+  songs:null,         // curated bank (fetched from /api/songs)
+  song:null,          // current track
+  songPlayer:null,    // {stop, ended} of the playing track
+  showRunning:false,  // the autonomous show loop is active
+  songPlaying:false,  // a generated song is currently sounding (ducks the bed)
+  pendingBreak:null,  // buffered DJ break for the next transition (dead-air gating)
+  locale:null,        // resolved real weather/time/city, or null (fictional fallback)
+  connecting:false,   // caller-intro is playing before the mic opens
+  sessionMemory:null, // SP1: most recent caller {caller_name,place,topic,mood}
+  dedicationQueue:[], // SP1: pending caller dedications (cap 2)
+  recentKinds:[],     // SP2: rolling log of content kinds (cap 8) for pacing
+  breaksSinceCaller:99, // SP2: breaks since last call-in (high = none yet)
+  lastSegueBreak:-99, // SP2: break index of last voiced through-line
+  breakIndex:0,       // SP2: monotonic break counter
+  generatedCount:0,   // SP3: AI song cards injected this session
+  demo:false,         // SP2: ?demo=1 logs showrunner picks
+  warming:false       // power-on warm-up ritual is in progress (visual only)
+};
+
+/* ---- C. DOM refs -------------------------------------------------- */
+const $ = (id)=>document.getElementById(id);
+const els = {
+  body: document.body,
+  power: $("powerKnob"), pwrTxt: $("pwrTxt"),
+  onairLabel: $("onairLabel"),
+  dialwrap: $("dialwrap"), dialFrame: $("dialFrame"),
+  needle: $("needle"), freqReadout: $("freqReadout"),
+  dialLight: $("dialLight"), dialCanvas: $("dialCanvas"),
+  transcript: $("transcript"),
+  vuCanvas: $("vuCanvas"),
+  reelL: $("reelL"), reelR: $("reelR"),
+  handset: $("handset"),
+  gauge: $("gauge"), gaugeFill: $("gaugeFill"), gaugeDot: $("gaugeDot"),
+  stageCap: $("stageCap"),
+  nextBtn: $("nextBtn"), capToggle: $("capToggle"),
+  infoBtn: $("infoBtn"), innovScrim: $("innovScrim"),
+  innovClose: $("innovClose"), innovGrid: $("innovGrid"),
+  caption: $("caption"),
+  nowPlaying: $("nowPlaying"), npText: $("npText")
+};
+
+const mql = window.matchMedia("(prefers-reduced-motion: reduce)");
+State.reducedMotion = mql.matches;
+if (mql.addEventListener) mql.addEventListener("change", e=>{ State.reducedMotion = e.matches; });
+
+// CSS custom-property helpers for the warm-up ritual
+function setWarm(v){ document.documentElement.style.setProperty("--warm", v.toFixed(3)); }
+function setLock(v){ document.documentElement.style.setProperty("--lock", v.toFixed(3)); }
+
+/* ===================================================================
+   B2. STATION-LOG OVERLAY — every innovation, one line each ("i" button)
+   =================================================================== */
+const INNOVATIONS = [
+  {tag:"ホスト",       t:"自律する局の頭脳",         d:"宵野サムは局名アナウンス、つぶやき、天気、曲の献呈まで、生放送をひとりで回し続けます。チャットボットではありません。"},
+  {tag:"音楽",         t:"その場で合成される楽曲",   d:"すべての曲はキー・スケール・テンポ・音色からブラウザ内で生成。音声ファイルは一切なし、同じ夜は二度と流れません。"},
+  {tag:"電話出演",     t:"ラジオに話しかける",       d:"タップして話せば、サムが電波の上で応えます。あなたの声は数秒で文字になり、返事になって戻ってきます。"},
+  {tag:"記憶",         t:"あなたの電話を覚えている", d:"サムはあなたが話したことを覚えていて、のちほど名前を添えて一曲を捧げます。"},
+  {tag:"ショーランナー", t:"卓に座るディレクター",     d:"AIのショーランナーが場の空気を読み、曲とセグメントを選んで夜のペースを整えます。"},
+  {tag:"ダイヤルの外",  t:"砂嵐にひそむ亡霊",         d:"98.6から外れると、ノイズの底に埋もれたAIの迷子電波が聞こえてきます。"},
+  {tag:"新譜プレス",    t:"放送中に生まれるレコード", d:"サムはその場で架空の新曲を書き下ろします。今夜プレスされたばかりの、誰も聴いたことのない一枚。"},
+  {tag:"天気",         t:"あなたの空を、夢のように", d:"あなたの街の本当の天気が、予報の読み上げではなく、サムの深夜の語り口に織り込まれます。"},
+  {tag:"ガラス面",      t:"ダイヤルに現像される声",   d:"サムの言葉は、話されるそばからチューナーのガラスにフィルムのように現像されていきます。"},
+  {tag:"エンジン",      t:"小さなモデルが回す夜",     d:"局のすべてを、GPU一枚の上のコンパクトな1Bモデルが動かしています。小さなモデル、大きな夜。"}
+];
+function renderInnovations(){
+  if (!els.innovGrid || els.innovGrid.children.length) return;          // build once
+  INNOVATIONS.forEach(it=>{
+    const card = document.createElement("article"); card.className = "innov-card";
+    const tag = document.createElement("span"); tag.className = "tag"; tag.textContent = it.tag;
+    const h = document.createElement("h3"); h.textContent = it.t;
+    const p = document.createElement("p"); p.textContent = it.d;
+    card.appendChild(tag); card.appendChild(h); card.appendChild(p);
+    els.innovGrid.appendChild(card);
+  });
+}
+let _innovHideTimer = null;
+function openInnov(){
+  if (!els.innovScrim) return;
+  renderInnovations();
+  clearTimeout(_innovHideTimer);
+  els.innovScrim.hidden = false;
+  void els.innovScrim.offsetWidth;                 // reflow so .open transitions from hidden
+  els.innovScrim.classList.add("open");
+  if (els.innovClose) els.innovClose.focus({preventScroll:true});
+}
+function closeInnov(){
+  if (!els.innovScrim) return;
+  els.innovScrim.classList.remove("open");
+  clearTimeout(_innovHideTimer);
+  _innovHideTimer = setTimeout(()=>{ els.innovScrim.hidden = true; }, 300);
+  if (els.infoBtn) els.infoBtn.focus({preventScroll:true});
+}
+
+/* ===================================================================
+   D. AUDIO ENGINE - one AudioContext, radio chain, hiss bed, VU
+   =================================================================== */
+const Sound = {
+  ctx:null,
+  masterGain:null,        // final output
+  analyser:null,          // VU taps here (post voice + hiss mix)
+  vuData:null,
+  voiceEl:null,           // HTMLAudioElement for TTS playback
+  fragEl:null,            // SP4: dedicated low-gain element for off-dial fragments
+  fragments:null,         // SP4: cached {text,audio_b64} ghost fragments
+  voiceSrc:null,          // MediaElementSourceNode
+  bandpass:null,
+  shaper:null,
+  voiceGain:null,
+  hissSrc:null,
+  hissGain:null,
+  hissFilter:null,
+  mediaStream:null,
+  recorder:null,
+  recChunks:[],
+  _resolveEnd:null
+};
+
+// gentle saturation curve = warmth + a touch of crackle
+function makeWarmthCurve(amount){
+  const n = 1024, curve = new Float32Array(n), k = amount;
+  for (let i=0;i<n;i++){
+    const x = (i*2)/n - 1;
+    curve[i] = (1+k) * x / (1 + k*Math.abs(x));   // soft asymmetric clip
+  }
+  return curve;
+}
+
+// pink-ish noise buffer for tape hiss (a couple seconds, looped)
+function makeNoiseBuffer(ctx){
+  const len = ctx.sampleRate * 2;
+  const buf = ctx.createBuffer(1, len, ctx.sampleRate);
+  const d = buf.getChannelData(0);
+  let b0=0,b1=0,b2=0;
+  for (let i=0;i<len;i++){
+    const white = Math.random()*2-1;
+    b0 = 0.99765*b0 + white*0.0990460;     // lightweight pink filter
+    b1 = 0.96300*b1 + white*0.2965164;
+    b2 = 0.57000*b2 + white*1.0526913;
+    d[i] = (b0+b1+b2+white*0.1848) * 0.18;
+  }
+  return buf;
+}
+
+// A short synthesized plate-reverb impulse (decaying stereo noise).
+function makeImpulse(ctx, dur, decay){
+  const rate = ctx.sampleRate, len = Math.max(1, Math.floor(rate * dur));
+  const buf = ctx.createBuffer(2, len, rate);
+  for (let ch = 0; ch < 2; ch++){
+    const d = buf.getChannelData(ch);
+    for (let i = 0; i < len; i++){
+      d[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / len, decay);
+    }
+  }
+  return buf;
+}
+
+// A looped vinyl-crackle/room-tone bed: mostly a faint floor with sparse pops.
+function makeCrackleBuffer(ctx, secs){
+  const rate = ctx.sampleRate, len = Math.max(1, Math.floor(rate * secs));
+  const buf = ctx.createBuffer(1, len, rate);
+  const d = buf.getChannelData(0);
+  for (let i = 0; i < len; i++){
+    if (Math.random() < 0.0007){            // an occasional pop
+      d[i] = (Math.random() * 2 - 1) * (0.45 + Math.random() * 0.55);
+    } else {
+      d[i] = (Math.random() * 2 - 1) * 0.004; // faint continuous floor
+    }
+  }
+  return buf;
+}
+
+function initAudio(){
+  if (Sound.ctx) return;
+  const AC = window.AudioContext || window.webkitAudioContext;
+  const ctx = new AC();
+  Sound.ctx = ctx;
+
+  // master + analyser
+  Sound.masterGain = ctx.createGain();
+  Sound.masterGain.gain.value = 0.9;
+  Sound.analyser = ctx.createAnalyser();
+  Sound.analyser.fftSize = 256;
+  Sound.analyser.smoothingTimeConstant = 0.75;
+  Sound.vuData = new Uint8Array(Sound.analyser.frequencyBinCount);
+  Sound.analyser.connect(Sound.masterGain);
+  Sound.masterGain.connect(ctx.destination);
+
+  // ----- voice chain (AM broadcast): el -> HP300 -> LP3400 -> compressor ->
+  //       tape-sat -> voiceGain -> analyser, plus a parallel plate-reverb send.
+  Sound.voiceEl = new window.Audio();
+  Sound.fragEl = new window.Audio();           // SP4: plays buried under the static, low volume
+  Sound.voiceEl.crossOrigin = "anonymous";
+  Sound.voiceEl.preload = "auto";
+  Sound.voiceSrc = ctx.createMediaElementSource(Sound.voiceEl);
+
+  // AM band = highpass 300 + lowpass 3400 (the warm, boxed-in radio voice).
+  Sound.hp = ctx.createBiquadFilter();
+  Sound.hp.type = "highpass"; Sound.hp.frequency.value = 300; Sound.hp.Q.value = 0.7;
+  Sound.lp = ctx.createBiquadFilter();
+  Sound.lp.type = "lowpass"; Sound.lp.frequency.value = 3400; Sound.lp.Q.value = 0.7;
+  // The arc-cue code nudges "Sound.bandpass" to bring the voice closer; alias it
+  // to the lowpass so narrowing the top end reads as intimate/muffled.
+  Sound.bandpass = Sound.lp;
+
+  // Light compression -> even, intimate level (radio "loudness").
+  Sound.comp = ctx.createDynamicsCompressor();
+  Sound.comp.threshold.value = -24; Sound.comp.ratio.value = 3.5;
+  Sound.comp.attack.value = 0.004; Sound.comp.release.value = 0.25;
+
+  // Tape saturation (warmth).
+  Sound.shaper = ctx.createWaveShaper();
+  Sound.shaper.curve = makeWarmthCurve(2.5);
+  Sound.shaper.oversample = "2x";
+
+  Sound.voiceGain = ctx.createGain();
+  Sound.voiceGain.gain.value = 1.0;
+
+  Sound.voiceSrc.connect(Sound.hp);
+  Sound.hp.connect(Sound.lp);
+  Sound.lp.connect(Sound.comp);
+  Sound.comp.connect(Sound.shaper);
+  Sound.shaper.connect(Sound.voiceGain);
+  Sound.voiceGain.connect(Sound.analyser);
+
+  // ----- plate-reverb send (subtle; a synthesized decaying impulse) -----
+  Sound.reverb = ctx.createConvolver();
+  Sound.reverb.buffer = makeImpulse(ctx, 1.6, 2.6);
+  Sound.reverbSend = ctx.createGain();
+  Sound.reverbSend.gain.value = 0.12;
+  Sound.voiceGain.connect(Sound.reverbSend);
+  Sound.reverbSend.connect(Sound.reverb);
+  Sound.reverb.connect(Sound.analyser);
+
+  // ----- vinyl-crackle / room-tone bed: noise -> highpass -> crackleGain ->
+  //       analyser. Continuous when powered so the air is never dead.
+  Sound.crackleSrc = ctx.createBufferSource();
+  Sound.crackleSrc.buffer = makeCrackleBuffer(ctx, 6);
+  Sound.crackleSrc.loop = true;
+  Sound.crackleHP = ctx.createBiquadFilter();
+  Sound.crackleHP.type = "highpass"; Sound.crackleHP.frequency.value = 1800;
+  Sound.crackleGain = ctx.createGain();
+  Sound.crackleGain.gain.value = 0.0;
+  Sound.crackleSrc.connect(Sound.crackleHP);
+  Sound.crackleHP.connect(Sound.crackleGain);
+  Sound.crackleGain.connect(Sound.analyser);
+  Sound.crackleSrc.start(0);
+
+  // ----- lo-fi percussion bus (kick + brushed hat), gain-gated like the pad ---
+  Sound.drumGain = ctx.createGain();
+  Sound.drumGain.gain.value = 0.0;
+  Sound.drumGain.connect(Sound.analyser);
+
+  // ----- hiss bed: noise -> lowpass -> hissGain -> analyser
+  const buf = makeNoiseBuffer(ctx);
+  Sound.noiseBuf = buf;            // reused by the brushed-hat percussion
+  Sound.hissSrc = ctx.createBufferSource();
+  Sound.hissSrc.buffer = buf;
+  Sound.hissSrc.loop = true;
+
+  Sound.hissFilter = ctx.createBiquadFilter();
+  Sound.hissFilter.type = "lowpass";
+  Sound.hissFilter.frequency.value = 6500;
+
+  Sound.hissGain = ctx.createGain();
+  Sound.hissGain.gain.value = 0.0;
+
+  Sound.hissSrc.connect(Sound.hissFilter);
+  Sound.hissFilter.connect(Sound.hissGain);
+  Sound.hissGain.connect(Sound.analyser);
+  Sound.hissSrc.start(0);
+
+  // ----- ambient pad: a warm, synthesized late-night drone (NOT a real record;
+  //       no copyrighted audio). Only audible when powered + locked on station.
+  //       A low open-fifth (A2-E3-A3) through a slow-breathing lowpass.
+  Sound.padFilter = ctx.createBiquadFilter();
+  Sound.padFilter.type = "lowpass";
+  Sound.padFilter.frequency.value = 620;
+  Sound.padFilter.Q.value = 0.6;
+  Sound.padGain = ctx.createGain();
+  Sound.padGain.gain.value = 0.0;
+  Sound.padFilter.connect(Sound.padGain);
+  Sound.padGain.connect(Sound.analyser);
+  Sound.padOscs = [110.0, 164.81, 220.0].map((f, i) => {
+    const o = ctx.createOscillator();
+    o.type = i === 0 ? "sine" : "triangle";
+    o.frequency.value = f;
+    o.detune.value = (i - 1) * 6;        // gentle spread for warmth
+    o.connect(Sound.padFilter);
+    o.start(0);
+    return o;
+  });
+  Sound.padLfo = ctx.createOscillator();  // slow "breathing" on the cutoff
+  Sound.padLfo.frequency.value = 0.06;
+  Sound.padLfoGain = ctx.createGain();
+  Sound.padLfoGain.gain.value = 180;
+  Sound.padLfo.connect(Sound.padLfoGain);
+  Sound.padLfoGain.connect(Sound.padFilter.frequency);
+  Sound.padLfo.start(0);
+
+  Sound.voiceEl.addEventListener("ended", onVoiceEnded);
+  Sound.voiceEl.addEventListener("error", onVoiceEnded);
+}
+
+// Set static + ambient-pad levels from tuning. Locked on NIGHTWAVE = clean
+// signal (static fades to a whisper, warm pad comes up); off-band = rising hiss,
+// no pad. Both duck under the DJ's voice so speech stays clear.
+function updateHissForTuning(){
+  if (!Sound.ctx) return;
+  const detune = Math.abs(State.freq - NIGHTWAVE_FREQ);
+  const locked = detune <= LOCK_BAND;
+
+  // --- static / tape hiss ---
+  let hiss;
+  if (locked){
+    hiss = 0.006;                                  // locked: only a whisper of tape bed
+  } else {
+    const off = Math.min(1, (detune - LOCK_BAND) / 2.5);
+    hiss = 0.05 + off * 0.5;                        // off-band: static rises with detune
+  }
+  if (Sound._voicing) hiss *= 0.35;                // duck under the voice
+  rampGain(Sound.hissGain, hiss, 0.25);
+
+  // --- warm ambient pad: only when powered AND locked on the station ---
+  let pad = (State.powered && locked && !State.songPlaying) ? 0.05 : 0.0;
+  if (Sound._voicing) pad *= 0.55;                 // sit back under the voice
+  rampGain(Sound.padGain, pad, 0.8);
+
+  // --- lo-fi percussion: rides with the pad, ducks under voice AND songs ---
+  let drum = (State.powered && locked && !State.songPlaying) ? 0.35 : 0.0;
+  if (Sound._voicing) drum *= 0.4;
+  if (Sound.drumGain) rampGain(Sound.drumGain, drum, 0.6);
+}
+
+function rampGain(node, target, t){
+  if (!Sound.ctx || !node) return;
+  const now = Sound.ctx.currentTime;
+  node.gain.cancelScheduledValues(now);
+  node.gain.setValueAtTime(node.gain.value, now);
+  node.gain.linearRampToValueAtTime(target, now + t);
+}
+
+// ---- lo-fi percussion: soft kick + brushed hat on a slow, sparse pattern ----
+function playKick(t, dest){
+  if (!Sound.ctx) return;
+  const out = dest || Sound.drumGain; if (!out) return;
+  const o = Sound.ctx.createOscillator(), g = Sound.ctx.createGain();
+  o.type = "sine";
+  o.frequency.setValueAtTime(115, t);
+  o.frequency.exponentialRampToValueAtTime(45, t + 0.12);
+  g.gain.setValueAtTime(0.0001, t);
+  g.gain.exponentialRampToValueAtTime(0.9, t + 0.005);
+  g.gain.exponentialRampToValueAtTime(0.0001, t + 0.30);
+  o.connect(g); g.connect(out);
+  o.start(t); o.stop(t + 0.33);
+}
+function playHat(t, dest){
+  if (!Sound.ctx || !Sound.noiseBuf) return;
+  const out = dest || Sound.drumGain; if (!out) return;
+  const s = Sound.ctx.createBufferSource(), g = Sound.ctx.createGain(), hp = Sound.ctx.createBiquadFilter();
+  s.buffer = Sound.noiseBuf;
+  hp.type = "highpass"; hp.frequency.value = 7500;
+  g.gain.setValueAtTime(0.0001, t);
+  g.gain.exponentialRampToValueAtTime(0.16, t + 0.003);
+  g.gain.exponentialRampToValueAtTime(0.0001, t + 0.06);
+  s.connect(hp); hp.connect(g); g.connect(out);
+  s.start(t); s.stop(t + 0.08);
+}
+function startDrums(){
+  if (Sound.drumTimer || !Sound.ctx) return;
+  const bpm = 76, stepDur = (60 / bpm) / 2;        // eighth notes
+  const KICK = [1,0,0,0,1,0,0,0], HAT = [0,0,1,0,0,0,1,0];
+  let step = 0, nextTime = Sound.ctx.currentTime + 0.12;
+  function tick(){
+    while (nextTime < Sound.ctx.currentTime + 0.25){
+      if (KICK[step % 8]) playKick(nextTime);
+      if (HAT[step % 8]) playHat(nextTime);
+      nextTime += stepDur; step++;
+    }
+    Sound.drumTimer = setTimeout(tick, 60);
+  }
+  tick();
+}
+function stopDrums(){
+  if (Sound.drumTimer){ clearTimeout(Sound.drumTimer); Sound.drumTimer = null; }
+}
+
+// ---- stall lines: prefetch instant filler clips to mask call latency ----
+async function fetchStalls(){
+  try{
+    const r = await fetch("/api/stalls");
+    if (r.ok){ const j = await r.json(); if (Array.isArray(j.stalls)) return j.stalls; }
+  }catch(_){}
+  return [];
+}
+// SP4: cache a few AI ghost fragments (text + audio) like the stall clips.
+async function fetchFragments(){
+  const out = [];
+  try{
+    const res = await Promise.all([0,1,2,3].map(()=>fetchSegment("fragment")));
+    res.forEach(s => { if (s && s.text) out.push({ text:s.text, audio_b64:s.audio_b64 }); });
+  }catch(_){}
+  return out;
+}
+// SP4: render a clean fragment as a half-heard caption (one static break).
+function halfHeard(t){
+  t = (t || "").trim(); if (!t) return "…—雑音—…";
+  const breaks = ["—ザザッ—","【雑音】","——","…ザーッ…"];
+  const brk = breaks[Math.floor(Math.random()*breaks.length)];
+  const w = t.split(" ");
+  if (w.length > 4){ const i = 1 + Math.floor(Math.random()*(w.length-2)); w.splice(i,0,brk); }
+  else if (w.length === 1 && t.length > 8){   // JA: spaceless text -> break the string itself
+    const i = 2 + Math.floor(Math.random()*(t.length-4));
+    return "… " + t.slice(0,i) + " " + brk + " " + t.slice(i) + " …";
+  }
+  return "… " + w.join(" ") + " …";
+}
+// SP4: play a fragment buried under the static (dedicated low-gain element; NOT the DJ voice
+// path, so no ON-AIR, no static-duck, no karaoke).
+function playFragment(frag){
+  showCaption(halfHeard(frag && frag.text || garble()), "fragment");
+  if (!frag || !frag.audio_b64 || !Sound.fragEl) return;
+  try{
+    const b = frag.audio_b64;
+    Sound.fragEl.src = b.indexOf("data:")===0 ? b : ("data:audio/wav;base64," + b);
+    Sound.fragEl.volume = 0.25;
+    const p = Sound.fragEl.play(); if (p && p.catch) p.catch(()=>{});
+  }catch(_){}
+}
+// True while Sam's voice is actually on the air (or a turn is being fetched / a call
+// is live). Off-dial ghost fragments must NOT fire then -- showCaption() clears the
+// karaoke timers, which would freeze the live caption mid-word and ghost it away.
+function djSpeaking(){ return !!Sound._voicing || State.busy || State.recording || State.connecting; }
+
+// SP4: schedule a buried fragment when the dial settles off-band (rare; cooldown-gated).
+let _fragTimer = null, _lastFragAt = 0;
+function scheduleFragment(){
+  clearTimeout(_fragTimer);
+  _fragTimer = setTimeout(()=>{
+    if (!State.powered || djSpeaking()) return;       // never paint over Sam's live voice
+    if (Math.abs(State.freq - NIGHTWAVE_FREQ) <= LOCK_BAND) return;     // re-locked
+    const now = performance.now();
+    if (now - _lastFragAt < 8000){ showCaption(halfHeard(garble()), "fragment"); return; }  // cooldown -> caption only
+    _lastFragAt = now;
+    const f = (Sound.fragments && Sound.fragments.length) ? Sound.fragments[Math.floor(Math.random()*Sound.fragments.length)] : null;
+    playFragment(f);
+    if (!Sound.fragments || Sound.fragments.length < 2) fetchFragments().then(fr=>{ if (fr && fr.length) Sound.fragments = fr; });
+  }, 600);
+}
+
+/* ===================================================================
+   F2. GENERATIVE MUSIC ENGINE (in-browser; per-track key/scale/tempo/timbre)
+   =================================================================== */
+const NOTE = {C:0,"C#":1,Db:1,D:2,"D#":3,Eb:3,E:4,F:5,"F#":6,Gb:6,G:7,"G#":8,Ab:8,A:9,"A#":10,Bb:10,B:11};
+const SCALES = {
+  major:[0,2,4,5,7,9,11], minor:[0,2,3,5,7,8,10],
+  dorian:[0,2,3,5,7,9,10], lydian:[0,2,4,6,7,9,11],
+  pentatonic_minor:[0,3,5,7,10]
+};
+const PROGRESSIONS = [[1,5,6,4],[1,4,5,5],[6,4,1,5],[1,6,4,5],[2,5,1,4],[1,5,4,4]];
+const TIMBRES = {
+  rhodes:         {type:"sine",     lpf:2200, atk:0.01, rel:0.5, gain:0.5},
+  sine_pad:       {type:"sine",     lpf:1400, atk:0.30, rel:1.1, gain:0.5},
+  triangle_pluck: {type:"triangle", lpf:2600, atk:0.005,rel:0.35,gain:0.45},
+  soft_saw:       {type:"sawtooth", lpf:1500, atk:0.05, rel:0.6, gain:0.32},
+  music_box:      {type:"triangle", lpf:3600, atk:0.002,rel:0.5, gain:0.4}
+};
+function mtof(m){ return 440 * Math.pow(2, (m - 69) / 12); }
+function scaleDegreeMidi(rootMidi, scaleName, degree){
+  const s = SCALES[scaleName] || SCALES.minor;
+  const idx = (((degree - 1) % s.length) + s.length) % s.length;
+  const oct = Math.floor((degree - 1) / s.length);
+  return rootMidi + s[idx] + 12 * oct;
+}
+function playNote(dest, midi, t, dur, cfg, vel){
+  if (!Sound.ctx) return;
+  const o = Sound.ctx.createOscillator(), g = Sound.ctx.createGain(), f = Sound.ctx.createBiquadFilter();
+  o.type = cfg.type; o.frequency.value = mtof(midi);
+  f.type = "lowpass"; f.frequency.value = cfg.lpf;
+  const peak = Math.max(0.001, (vel || 1) * cfg.gain);
+  g.gain.setValueAtTime(0.0001, t);
+  g.gain.exponentialRampToValueAtTime(peak, t + cfg.atk);
+  g.gain.exponentialRampToValueAtTime(0.0001, t + dur + cfg.rel);
+  o.connect(f); f.connect(g); g.connect(dest);
+  o.start(t); o.stop(t + dur + cfg.rel + 0.05);
+}
+
+// A short warm sonic-logo sting (a 4-note chime) for the show open.
+function playSonicLogo(){
+  if (!Sound.ctx) return;
+  const t0 = Sound.ctx.currentTime + 0.05;
+  const out = Sound.ctx.createGain(); out.gain.value = 0.5; out.connect(Sound.analyser);
+  if (Sound.reverb){ const rv = Sound.ctx.createGain(); rv.gain.value = 0.35; out.connect(rv); rv.connect(Sound.reverb); }
+  [64, 68, 71, 76].forEach((midi, i) => {   // E G# B E -- a warm major chime
+    const o = Sound.ctx.createOscillator(), g = Sound.ctx.createGain();
+    o.type = "triangle"; o.frequency.value = mtof(midi);
+    const t = t0 + i * 0.16;
+    g.gain.setValueAtTime(0.0001, t);
+    g.gain.exponentialRampToValueAtTime(0.5, t + 0.02);
+    g.gain.exponentialRampToValueAtTime(0.0001, t + 1.5);
+    o.connect(g); g.connect(out); o.start(t); o.stop(t + 1.6);
+  });
+}
+
+// Render one ~58s instrumental from a track's musical params. {stop(), ended}.
+function renderSong(track){
+  const ctx = Sound.ctx;
+  if (!ctx) return { stop(){}, ended: Promise.resolve() };
+  const cfg = TIMBRES[track.timbre] || TIMBRES.rhodes;
+  const scaleName = SCALES[track.scale] ? track.scale : "minor";
+  const root = (NOTE[track.key] != null) ? NOTE[track.key] : 0;
+  const bpm = Math.max(52, Math.min(96, track.tempo || 72));
+  const beat = 60 / bpm, bar = beat * 4;
+  const prog = PROGRESSIONS[Math.floor(Math.random() * PROGRESSIONS.length)];
+  const chordRoot = 48 + root, bassRoot = 36 + root;
+
+  const bus = ctx.createGain(); bus.gain.value = 0.0001; bus.connect(Sound.analyser);
+  if (Sound.reverb){ const rev = ctx.createGain(); rev.gain.value = 0.18; bus.connect(rev); rev.connect(Sound.reverb); }
+  const drumSub = ctx.createGain(); drumSub.gain.value = 0.5; drumSub.connect(bus);
+
+  let t = ctx.currentTime + 0.15;
+  const endAt = t + 58;
+  let bars = 0, stopped = false, timer = null, resolveEnded;
+  const ended = new Promise(r => { resolveEnded = r; });
+
+  function scheduleBar(b){
+    const deg = prog[bars % prog.length];
+    const chord = [0, 2, 4].map(o => scaleDegreeMidi(chordRoot, scaleName, deg + o));
+    chord.forEach(m => playNote(bus, m, b, bar * 0.92, TIMBRES.sine_pad, 0.20));
+    const bassMidi = scaleDegreeMidi(bassRoot, scaleName, deg);
+    const bassCfg = { type:"triangle", lpf:520, atk:0.01, rel:0.3, gain:0.55 };
+    playNote(bus, bassMidi, b, beat * 1.7, bassCfg, 0.7);
+    playNote(bus, bassMidi, b + beat * 2, beat * 1.7, bassCfg, 0.6);
+    for (let i = 0; i < 8; i++){
+      if (Math.random() < 0.7){
+        const note = chord[i % chord.length] + (Math.random() < 0.25 ? 12 : 0);
+        playNote(bus, note, b + i * (beat / 2), beat * 0.45, cfg, 0.45 + Math.random() * 0.3);
+      }
+    }
+    playKick(b, drumSub); playKick(b + beat * 2, drumSub);
+    for (let i = 0; i < 4; i++) playHat(b + i * beat + beat * 0.5, drumSub);
+  }
+  function finish(){
+    if (stopped) return; stopped = true;
+    try{ bus.disconnect(); }catch(_){}
+    State.songPlaying = false; updateHissForTuning(); resolveEnded();
+  }
+  function tick(){
+    if (stopped) return;
+    const now = ctx.currentTime;
+    while (t < now + 0.5 && t < endAt){ scheduleBar(t); t += bar; bars++; }
+    if (t >= endAt){ rampGain(bus, 0.0001, 1.4); setTimeout(finish, 1700); return; }
+    timer = setTimeout(tick, 90);
+  }
+  rampGain(bus, 0.5, 1.2);
+  State.songPlaying = true; updateHissForTuning();
+  tick();
+  return {
+    setLevel(v, ramp){ try{ rampGain(bus, Math.max(0.0001, v), ramp || 0.4); }catch(_){} },
+    stop(){
+      if (stopped) return; stopped = true;
+      if (timer) clearTimeout(timer);
+      try{ rampGain(bus, 0.0001, 0.4); }catch(_){}
+      setTimeout(() => { try{ bus.disconnect(); }catch(_){} }, 500);
+      State.songPlaying = false; updateHissForTuning(); resolveEnded();
+    },
+    ended
+  };
+}
+
+/* ---- show loop (C1: songs back-to-back; C2 weaves DJ talk between) ---- */
+const CLIENT_SONGS = [
+  {title:"ネオンの雨", artist:"火曜日の幽霊", vibe:"melancholy", key:"A", scale:"minor", tempo:72, timbre:"rhodes", recommended_by:"@国道9号の夜行便"},
+  {title:"砂嵐の子守唄", artist:"ビロードのアンテナ", vibe:"dreamy", key:"F", scale:"lydian", tempo:64, timbre:"sine_pad", recommended_by:"@真夜中のまひる"},
+  {title:"紙の月モーテル", artist:"夕暮れカーディガン", vibe:"warm", key:"D", scale:"major", tempo:80, timbre:"triangle_pluck", recommended_by:"@終電のるう"}
+];
+async function fetchSongs(){
+  try{ const r = await fetch("/api/songs"); if (r.ok){ const j = await r.json(); if (Array.isArray(j.songs) && j.songs.length) return j.songs; } }catch(_){}
+  return CLIENT_SONGS;
+}
+// Ask the browser for the listener's location (permission prompt), resolve real
+// weather server-side, and stash it. Denial/error: stays null -> fictional weather.
+// San Francisco — the default location when the listener gives us none.
+const DEFAULT_LAT = 37.7749, DEFAULT_LON = -122.4194;
+async function resolveLocaleAt(lat, lon){
+  try{
+    const r = await fetch("/api/locale", {
+      method:"POST", headers:{"Content-Type":"application/json"},
+      body: JSON.stringify({ lat, lon })
+    });
+    if (r.ok){ const j = await r.json(); if (j && j.resolved) State.locale = j; }
+  }catch(_){}
+}
+function requestLocale(){
+  if (State.locale) return;
+  // No geolocation API at all -> default to San Francisco.
+  if (!navigator.geolocation){ resolveLocaleAt(DEFAULT_LAT, DEFAULT_LON); return; }
+  navigator.geolocation.getCurrentPosition(
+    (pos)=>{ resolveLocaleAt(pos.coords.latitude, pos.coords.longitude); },
+    ()=>{ resolveLocaleAt(DEFAULT_LAT, DEFAULT_LON); },   // denied/unavailable -> San Francisco
+    { timeout:8000, maximumAge:600000 });
+}
+function pickSong(){
+  const bank = (State.songs && State.songs.length) ? State.songs : CLIENT_SONGS;
+  let s; do { s = bank[Math.floor(Math.random() * bank.length)]; } while (bank.length > 1 && s === State.song);
+  return s;
+}
+// ---- SP2: AI showrunner (context-aware policy, deterministic, never blocks) ----
+const MOOD_VIBES = {
+  warm:      ["warm","cozy","hopeful","nostalgic","breezy","gentle"],
+  nostalgic: ["nostalgic","wistful","bittersweet","melancholy","jazzy","romantic"],
+  tender:    ["tender","gentle","lonely","romantic","wistful","melancholy"],
+  searching: ["pensive","mysterious","hypnotic","dreamy","eerie","ambient"],
+  hollow:    ["lonely","melancholy","eerie","ambient","bittersweet","pensive"],
+  uneasy:    ["eerie","mysterious","hypnotic","pensive","ambient","lonely"]
+};
+const MOOD_SEGUE = {
+  warm:"今夜は暖かくて穏やか", nostalgic:"少し懐かしい気分の夜",
+  tender:"やさしい時間になってきた", searching:"もの思いにふける時間帯",
+  hollow:"静かでひとりの時間のために", uneasy:"空気のどこかが落ち着かない夜"
+};
+function pickSongForMood(mood, avoid){
+  const bank = (State.songs && State.songs.length) ? State.songs : CLIENT_SONGS;
+  const vibes = MOOD_VIBES[mood] || MOOD_VIBES.warm;
+  const avoidVibe = avoid && avoid.vibe;
+  const cand = bank.filter(s => vibes.indexOf(s.vibe) >= 0 && s !== avoid && s.vibe !== avoidVibe);
+  if (!cand.length) return pickSong();
+  const weighted = [];
+  cand.forEach(s => { const w = vibes.length - vibes.indexOf(s.vibe); for (let i=0;i<w;i++) weighted.push(s); });
+  return weighted[Math.floor(Math.random()*weighted.length)];
+}
+function runShowrunner(){
+  try{
+    const mood = (State.sessionMemory && State.breaksSinceCaller <= 3)
+      ? (State.sessionMemory.mood || "warm") : "warm";
+    const song = pickSongForMood(mood, State.song);
+    const weatherKind = (State.locale && State.locale.resolved) ? "local_weather" : "weather";
+    const recent2 = State.recentKinds.slice(-2);
+    let pool = ["thought", weatherKind, "dedication"].filter(k => recent2.indexOf(k) < 0);
+    if (!pool.length) pool = ["thought", weatherKind, "dedication"];
+    const kinds = ["rejoin"];
+    const extra = (Math.random() < 0.5) ? 1 : 2;
+    for (let i=0;i<extra;i++){                       // distinct content kinds this break
+      const avail = pool.filter(k => kinds.indexOf(k) < 0);
+      const src = avail.length ? avail : pool;
+      kinds.push(src[Math.floor(Math.random()*src.length)]);
+    }
+    if (State.breakIndex % 3 === 0) kinds.push("station_id");
+    let segueHint = null;
+    const sinceSegue = State.breakIndex - State.lastSegueBreak;
+    if ((State.breaksSinceCaller === 1 || sinceSegue >= 5) && sinceSegue >= 2){
+      segueHint = (State.breaksSinceCaller === 1) ? "さっきの電話のすぐあとに"
+                                                  : (MOOD_SEGUE[mood] || MOOD_SEGUE.warm);
+      State.lastSegueBreak = State.breakIndex;
+    }
+    if (State.demo) try{ console.log("showrunner:", mood, "->", song.title, "("+song.vibe+")", segueHint||""); }catch(_){}
+    return { kinds, song, tone:mood, segueHint };
+  }catch(_){
+    return { kinds: chooseBreakKinds(), song: pickSong(), tone:"warm", segueHint:null };
+  }
+}
+function showNowPlaying(track){
+  if (!els.nowPlaying || !track) return;
+  els.nowPlaying.classList.add("playing");
+  if (els.npText){
+    els.npText.innerHTML = "";
+    els.npText.appendChild(document.createTextNode(
+      "♪ " + (track.title || "NIGHTWAVE") + " — " + (track.artist || "オールナイトデスク")));
+    if (track.recommended_by){
+      const r = document.createElement("span");
+      r.className = "np-req";
+      r.textContent = "  ·  リクエスト " + track.recommended_by;
+      els.npText.appendChild(r);
+    }
+  }
+}
+function clearNowPlaying(label){
+  if (!els.nowPlaying) return;
+  els.nowPlaying.classList.remove("playing");
+  if (els.npText) els.npText.textContent = label || "NIGHTWAVE — 夜通し、毎晩。";
+}
+function sleep(ms){ return new Promise(r => setTimeout(r, ms)); }
+async function fetchSegment(kind, ctx){
+  try{
+    const r = await fetch("/api/segment", {
+      method:"POST", headers:{"Content-Type":"application/json"},
+      body: JSON.stringify({ kind, ctx: ctx || {} })
+    });
+    if (r.ok) return await r.json();
+  }catch(_){}
+  return null;
+}
+function chooseBreakKinds(){
+  const picks = ["rejoin"];   // Sam Dusk re-identifies on EVERY return
+  const weatherKind = (State.locale && State.locale.resolved) ? "local_weather" : "weather";
+  const pool = ["thought","thought",weatherKind,"dedication"];
+  const extra = (Math.random() < 0.5) ? 1 : 2;
+  for (let i = 0; i < extra; i++) picks.push(pool[Math.floor(Math.random()*pool.length)]);
+  if (Math.random() < 0.4) picks.push("station_id");  // sometimes a station ID too
+  return picks;   // song_intro is appended in prepareBreak (always last)
+}
+// Buffer a whole break: DJ segments + the upcoming track's intro. -> {segs, track}
+// SP3: occasionally invent a fictional record and add it to the session bank.
+const MAX_GENERATED = 4;
+async function maybeGenerateCard(force){
+  if (!force && State.generatedCount >= MAX_GENERATED) return false;
+  if (!force){
+    const afterCaller = State.breaksSinceCaller <= 1;     // bias to "a record from your call"
+    if (!afterCaller && Math.random() > 0.2) return false;
+  }
+  try{
+    const ctx = {};
+    if (State.sessionMemory){ ctx.mood = State.sessionMemory.mood; ctx.topic = State.sessionMemory.topic; }
+    if (State.locale && State.locale.resolved) ctx.city = State.locale.city;
+    const r = await fetch("/api/song_card", { method:"POST", headers:{"Content-Type":"application/json"}, body: JSON.stringify({ ctx }) });
+    if (!r.ok) return false;
+    const j = await r.json(); const card = j && j.card;
+    if (card && card.title && card.scale && card.timbre && card.key){
+      if (!State.songs) State.songs = [];
+      State.songs.push(card);
+      State.generatedCount++;
+      return true;
+    }
+  }catch(_){}
+  return false;
+}
+async function prepareBreak(){
+  const plan = runShowrunner();
+  const track = plan.song;
+  const segs = [];
+  // A queued caller dedication takes precedence over a generic one this break.
+  const callerDed = State.dedicationQueue.length ? State.dedicationQueue.shift() : null;
+  let kinds = plan.kinds.slice();
+  if (callerDed) kinds = kinds.filter(k => k !== "dedication");
+  for (const k of kinds){
+    const ctx = (k === "local_weather") ? State.locale : null;
+    const s = await fetchSegment(k, ctx);
+    if (s) segs.push(s);
+    if (k === "rejoin" && callerDed){            // dedicate right after Sam re-IDs
+      const d = await fetchSegment("dedication", callerDed);
+      if (d) segs.push(d);
+    }
+  }
+  const introCtx = { title:track.title, artist:track.artist, vibe:track.vibe, recommended_by:track.recommended_by };
+  if (plan.segueHint) introCtx.segue = plan.segueHint;
+  if (track.generated) introCtx.fresh = true;
+  const intro = await fetchSegment("song_intro", introCtx);
+  segs.push(intro || { kind:"song_intro", mood:"warm", arc_cue:"none",
+    text:"続いては、" + track.artist + "で『" + track.title + "』。",
+    audio_b64: SILENT_WAV, words:[], wtimes:[] });
+  State.breakIndex++;
+  State.breaksSinceCaller++;
+  for (const k of kinds){ if (k !== "rejoin" && k !== "station_id") State.recentKinds.push(k); }
+  while (State.recentKinds.length > 8) State.recentKinds.shift();
+  return { segs, track };
+}
+async function playDJ(s){
+  if (!s) return;
+  setMood(s.mood || "warm");
+  handleArcCue(s.arc_cue || "none");
+  showCaptionKaraoke(s.text || "", s.words, s.wtimes);
+  await playVoiceB64(s.audio_b64);
+}
+async function runShow(){
+  if (State.showRunning) return;
+  State.showRunning = true;
+  try{
+    while (State.powered){
+      if (State.recording || State.busy){ await sleep(250); continue; }
+      // ensure a buffered break (only the opening one blocks, under the bed)
+      if (!State.pendingBreak){
+        showCaption("… NIGHTWAVE、まもなく電波に乗ります …", "status");
+        State.pendingBreak = await prepareBreak();
+      }
+      const brk = State.pendingBreak; State.pendingBreak = null;
+      if (!State.powered || State.recording) continue;
+      const intro = brk.segs[brk.segs.length - 1];
+      const lead = brk.segs.slice(0, -1);
+      State.song = brk.track; showNowPlaying(brk.track);   // plate shows the song for the whole break
+      // 1) the DJ break, over the crackle/pad bed
+      for (const s of lead){
+        if (!State.powered || State.recording) break;
+        await playDJ(s);
+        await sleep(160);
+      }
+      if (!State.powered || State.recording) continue;
+      // 2) the record + its intro together -> the DJ talks OVER the intro
+      const track = brk.track;
+      const player = renderSong(track);
+      State.songPlayer = player;
+      // 3) dead-air gating: buffer the NEXT break while this song plays
+      prepareBreak().then(b => { State.pendingBreak = b; }).catch(()=>{});
+      maybeGenerateCard();   // SP3: invent a record during the song (off critical path)
+      if (player.setLevel) player.setLevel(0.28, 0.6);   // duck the record under the DJ intro
+      await playDJ(intro);          // rides over the song's fade-in
+      if (player.setLevel) player.setLevel(0.5, 1.2);    // bring the record back up
+      // 4) let the record play out
+      await player.ended;
+      State.songPlayer = null;
+      if (!State.powered) break;
+      // keep the plate on the song that just played until the next break sets the next one
+    }
+  } finally { State.showRunning = false; clearNowPlaying(); }
+}
+
+// short burst of noise (glitch beat)
+function noiseBurst(dur, level){
+  if (!Sound.ctx) return;
+  const peak = Sound.hissGain.gain.value;
+  rampGain(Sound.hissGain, level, 0.02);
+  setTimeout(()=>rampGain(Sound.hissGain, peak, 0.25), dur);
+}
+
+// play a base64 WAV through the radio chain; resolve when finished
+function playVoiceB64(b64){
+  return new Promise((resolve)=>{
+    if (!b64 || !Sound.voiceEl){ resolve(); return; }
+    try{
+      const src = b64.indexOf("data:") === 0 ? b64 : ("data:audio/wav;base64," + b64);
+      Sound.voiceEl.src = src;
+      Sound._resolveEnd = resolve;
+      setBroadcasting(true);
+      Sound._voicing = true; updateHissForTuning();   // duck static + pad under the voice
+      const p = Sound.voiceEl.play();
+      if (p && p.catch) p.catch(()=>{ resolve(); });
+    }catch(e){ resolve(); }
+  });
+}
+function onVoiceEnded(){
+  setBroadcasting(false);
+  Sound._voicing = false; updateHissForTuning();   // restore static/pad to tuning level
+  State.lastVoiceEnd = performance.now();
+  if (Sound._resolveEnd){ const r = Sound._resolveEnd; Sound._resolveEnd = null; r(); }
+}
+
+/* ===================================================================
+   E. DIAL / TUNING — slide-rule scale across the top of the glass
+   =================================================================== */
+function drawDial(){
+  const c = els.dialCanvas, ctx = c.getContext("2d");
+  const dpr = window.devicePixelRatio || 1;
+  const w = c.clientWidth, h = c.clientHeight;
+  if (!w || !h) return;
+  c.width = w*dpr; c.height = h*dpr; ctx.setTransform(dpr,0,0,dpr,0,0);
+  ctx.clearRect(0,0,w,h);
+
+  const pad = 14;
+  const span = FREQ_MAX - FREQ_MIN;
+  // warm-up brightens the scale; matches CSS celluloid lighting
+  const cssWarm = parseFloat(getComputedStyle(document.documentElement).getPropertyValue("--warm")) || 0;
+  const tickA = 0.20 + 0.55 * cssWarm;
+  const numA  = 0.30 + 0.55 * cssWarm;
+  ctx.textAlign = "center";
+
+  for (let f = 88; f <= 108; f += 1){
+    const x = pad + ((f - FREQ_MIN)/span) * (w - pad*2);
+    const major = (f % 4 === 0);
+    ctx.strokeStyle = "rgba(243,228,192," + (major ? tickA : tickA*0.55).toFixed(3) + ")";
+    ctx.lineWidth = major ? 1.2 : 1;
+    ctx.beginPath();
+    ctx.moveTo(x, 6);
+    ctx.lineTo(x, 6 + (major?13:8));
+    ctx.stroke();
+    if (major){
+      ctx.font = "11px 'Marcellus SC', Georgia, 'Hiragino Mincho ProN', serif";
+      ctx.fillStyle = "rgba(243,228,192," + numA.toFixed(3) + ")";
+      ctx.fillText(String(f), x, 34);
+    }
+  }
+  // NIGHTWAVE marker (98.6) — engraved + ember-lit
+  const nx = pad + ((NIGHTWAVE_FREQ - FREQ_MIN)/span) * (w - pad*2);
+  ctx.font = "11px 'Marcellus SC', Georgia, 'Hiragino Mincho ProN', serif";
+  ctx.fillStyle = "rgba(255,122,24,0.92)";
+  ctx.fillText("98.6", nx, 34);
+  ctx.fillStyle = "rgba(255,122,24,0.85)";
+  ctx.beginPath(); ctx.moveTo(nx, 4); ctx.lineTo(nx-4, 13); ctx.lineTo(nx+4, 13); ctx.closePath(); ctx.fill();
+}
+
+function freqToPct(f){ return (f - FREQ_MIN)/(FREQ_MAX - FREQ_MIN); }
+
+function setFreq(f, fromUser){
+  f = Math.max(FREQ_MIN, Math.min(FREQ_MAX, f));
+  State.freq = f;
+  const pct = freqToPct(f);
+  els.needle.style.left = (pct*100) + "%";
+  els.dialLight.style.setProperty("--needle-x", (pct*100)+"%");
+  els.freqReadout.textContent = f.toFixed(1);
+  els.needle.setAttribute("aria-valuenow", f.toFixed(1));
+  els.needle.setAttribute("aria-valuetext", f.toFixed(1)+"メガヘルツ");
+
+  const locked = Math.abs(f - NIGHTWAVE_FREQ) <= LOCK_BAND;
+  els.dialwrap.classList.toggle("locked", locked);
+  // the ONE cool accent: teal lock cue + signal tint only at perfect lock
+  els.body.classList.toggle("locked", locked && State.powered);
+  // dial glow clarity: 1 when locked, fading off-band
+  const clarity = Math.max(0, 1 - Math.abs(f - NIGHTWAVE_FREQ)/2.0);
+  document.documentElement.style.setProperty("--dial-glow", clarity.toFixed(3));
+
+  updateHissForTuning();
+  applyMeter();   // refresh the SIGNAL gauge from the new tuning
+
+  // easter egg whisper (held back while Sam is mid-sentence)
+  if (fromUser && State.powered && !djSpeaking() && Math.abs(f - EGG_FREQ) <= 0.2 && !State.eggPlayed){
+    State.eggPlayed = true;
+    showCaption("…誰か、そこにいる？ 君の息づかいが聞こえる気がするんだ…", "fragment");
+  } else if (Math.abs(f - EGG_FREQ) > 0.4){
+    State.eggPlayed = false;
+  }
+
+  // off-band: bleed in a buried AI ghost fragment on dwell (SP4) -- but never while
+  // Sam is talking, or it would clobber the live karaoke caption.
+  if (fromUser && State.powered && !locked && !djSpeaking() && Math.abs(f-EGG_FREQ) > 0.2){
+    scheduleFragment();
+  }
+}
+
+// produce a garbled off-station fragment
+const FRAGMENTS = [
+  "…ザザッ… あちらの天気は — 【雑音】 — いつまでも晴れず…",
+  "…この一曲は —— まだ起きている誰かさんへ —ガガッ—",
+  "… —ピー— 時刻は ただいま … 時刻は ただいま … 時刻は—",
+  "… お　ぼ　え　て　い　て … 【搬送波消失】 …",
+  "…お聴きの放送は ——— ザーーー ———"
+];
+function garble(){ return FRAGMENTS[Math.floor(Math.random()*FRAGMENTS.length)]; }
+
+// pointer dragging
+function pointerToFreq(clientX){
+  const r = els.dialFrame.getBoundingClientRect();
+  const pad = 14;
+  let pct = (clientX - r.left - pad) / (r.width - pad*2);
+  pct = Math.max(0, Math.min(1, pct));
+  return FREQ_MIN + pct*(FREQ_MAX - FREQ_MIN);
+}
+let dragging = false;
+function onDialDown(e){
+  dragging = true;
+  if (els.dialFrame.setPointerCapture){ try{ els.dialFrame.setPointerCapture(e.pointerId); }catch(_){} }
+  setFreq(pointerToFreq(e.clientX), true);
+  els.needle.focus({preventScroll:true});
+  e.preventDefault();
+}
+function onDialMove(e){ if (dragging) setFreq(pointerToFreq(e.clientX), true); }
+function onDialUp(){ dragging = false; }
+
+// keyboard tuning (needle is role=slider)
+function onNeedleKey(e){
+  let d = 0;
+  if (e.key === "ArrowLeft" || e.key === "ArrowDown") d = -0.1;
+  else if (e.key === "ArrowRight" || e.key === "ArrowUp") d = 0.1;
+  else if (e.key === "PageDown") d = -1;
+  else if (e.key === "PageUp") d = 1;
+  else if (e.key === "Home"){ setFreq(NIGHTWAVE_FREQ, true); e.preventDefault(); return; }
+  else return;
+  setFreq(Math.round((State.freq + d)*10)/10, true);
+  e.preventDefault();
+}
+
+/* ===================================================================
+   F. SIGNAL METER - client owns it
+   =================================================================== */
+// The realization arc was retired; the gauge is now a diegetic SIGNAL meter
+// driven by how well we're tuned to the station. (State.meter/stage are kept
+// only so the legacy /api/call payload stays valid.)
+function applyMeter(){
+  State.meter = Math.max(0, Math.min(100, State.meter));
+  State.stage = meterToStage(State.meter);
+  const detune = Math.abs(State.freq - NIGHTWAVE_FREQ);
+  const sig = Math.round(Math.max(0, Math.min(100, (1 - detune / 2.0) * 100)));
+  els.gaugeFill.style.width = sig + "%";
+  els.gaugeDot.style.left = sig + "%";
+  els.gauge.setAttribute("aria-valuenow", String(sig));
+  els.stageCap.textContent = State.powered ? "信号" : "—";
+}
+function addMeter(delta){ State.meter += delta; }   // no UI effect now (kept for payloads)
+
+function setMood(mood){
+  if (!MOOD_COLOR[mood]) mood = "warm";
+  State.mood = mood;
+  const pair = MOOD_COLOR[mood];
+  const root = document.documentElement.style;
+  root.setProperty("--mood", pair[0]);
+  root.setProperty("--mood-soft", pair[1]);
+}
+
+/* ===================================================================
+   G. CAPTIONS (karaoke) — Sam Dusk's voice prints on the dial-glass
+   =================================================================== */
+let captionTimers = [];
+function clearCaptionTimers(){ captionTimers.forEach(clearTimeout); captionTimers = []; }
+
+// Lift finished lines into the ghost stack; cap the trail at 3 lines.
+function ghostifyLines(){
+  const lines = Array.prototype.slice.call(els.transcript.querySelectorAll(".line"));
+  lines.forEach(l=>{ l.classList.remove("current"); l.classList.add("past"); });
+  while (els.transcript.children.length > 3) els.transcript.removeChild(els.transcript.firstChild);
+}
+
+// status / fragment lines (system messages): printed plainly on the glass,
+// always mirrored to the SR live-region. Status text bypasses captionsOff.
+function showCaption(text, kind){
+  clearCaptionTimers();
+  // mirror to the assistive-tech live region
+  els.caption.className = "sr-only" + (kind ? " "+kind : "");
+  els.caption.textContent = (!State.captionsOn && kind !== "status") ? "" : (text || "");
+
+  if (!State.captionsOn && kind !== "status"){ ghostifyLines(); return; }
+  ghostifyLines();
+  const line = document.createElement("div");
+  line.className = "line current" + (kind ? " "+kind : "");
+  line.textContent = text || "";
+  els.transcript.appendChild(line);
+  requestAnimationFrame(()=>line.classList.add("in"));
+}
+
+// JA fallback: split spaceless Japanese text into caption chunks — first at
+// punctuation (、。！？…), then any long run into 4-6 char chunks. Returns []
+// for spaced (word-delimited) text so the original plain-line path is kept.
+function splitJaChunks(text){
+  const t = (text || "").trim();
+  if (!t || /\s/.test(t)) return [];
+  const parts = t.match(/[^、。！？…]+[、。！？…]*/g) || [t];
+  const out = [];
+  parts.forEach(p => {
+    while (p.length > 6){ out.push(p.slice(0, 5)); p = p.slice(5); }
+    if (p) out.push(p);
+  });
+  return out;
+}
+
+// karaoke: words/wtimes from /speak (progressive enhancement). Each spoken word
+// develops like film — opacity + blur->sharp + a decaying ember bloom — then
+// settles to ivory; finished lines lift and fade to --foxed (a ghost stack).
+function showCaptionKaraoke(text, words, wtimes, callerText){
+  clearCaptionTimers();
+  els.caption.className = "sr-only";
+  if (!State.captionsOn){
+    els.caption.textContent = "";
+    ghostifyLines();
+    return;
+  }
+  // mirror full line to the SR live-region for assistive tech
+  els.caption.textContent = (callerText ? ("「"+callerText+"」  ") : "") + (text || "");
+
+  ghostifyLines();
+  const line = document.createElement("div");
+  line.className = "line current";
+  if (callerText){
+    const c = document.createElement("span");
+    c.className = "caller-said";
+    c.textContent = "「" + callerText + "」";
+    line.appendChild(c);
+  }
+
+  if (!words || !words.length || !wtimes || wtimes.length !== words.length){
+    // JA fallback: no usable word timings from the server. For spaceless
+    // Japanese text, build pseudo-karaoke chunks with estimated times so the
+    // ignition trail still runs; spaced text keeps the original plain line.
+    const chunks = splitJaChunks(text || "");
+    if (chunks.length > 1){
+      words = chunks;
+      let acc = 0.15;                        // ~140ms per character estimate
+      wtimes = chunks.map(ch => { const t0 = acc; acc += Math.max(0.22, ch.length * 0.14); return t0; });
+    } else {
+      line.appendChild(document.createTextNode(text || ""));
+      els.transcript.appendChild(line);
+      requestAnimationFrame(()=>line.classList.add("in"));
+      return;
+    }
+  }
+  const sep = /\s/.test(text || "") ? " " : "";   // JA: no space between chunks
+  const spans = words.map((w)=>{
+    const s = document.createElement("span");
+    s.className = "w"; s.textContent = w + sep;
+    line.appendChild(s);
+    return s;
+  });
+  els.transcript.appendChild(line);
+  requestAnimationFrame(()=>line.classList.add("in"));
+  words.forEach((w,i)=>{
+    const t = Math.max(0, wtimes[i]) * 1000;
+    captionTimers.push(setTimeout(()=>{
+      if (!spans[i]) return;
+      spans[i].classList.add("spoken");                  // ember bloom on the live word
+      // decay the bloom to settled ivory after a beat (the film "develops")
+      captionTimers.push(setTimeout(()=>{
+        if (spans[i]){ spans[i].classList.remove("spoken"); spans[i].classList.add("said"); }
+      }, 260));
+    }, t));
+  });
+}
+
+/* ===================================================================
+   H. NETWORKING - same-origin /api/*, graceful + mock fallback
+   =================================================================== */
+async function api(path, body){
+  const slow = setTimeout(()=>{ if (State.busy) showCaption("… 送信機を温めています …", "status"); }, 1800);
+  try{
+    const res = await fetch(path, {
+      method:"POST",
+      headers:{"Content-Type":"application/json"},
+      body:JSON.stringify(body)
+    });
+    clearTimeout(slow);
+    if (!res.ok) throw new Error("status "+res.status);
+    return await res.json();
+  }catch(err){
+    clearTimeout(slow);
+    // graceful client-side fallback so the radio NEVER goes dead
+    return clientMock(path, body);
+  }
+}
+
+// Canned, stage-appropriate lines if the proxy is unreachable.
+// (The Space itself also has a NIGHTWAVE_MOCK; this is the last resort.)
+// Offline/failure fallback — straight-station Sam Dusk lines (the realization
+// arc is retired; a network hiccup must not resurface the old concept).
+const MOCK_LINES = [
+  "宵野サムです。おかえりなさい、NIGHTWAVE、98.6でお送りしています。夜はやわらかく、ダイヤルはあたたかい。",
+  "次の一曲は、長距離を走るドライバーと、真夜中を過ぎても灯りのついた台所へ。",
+  "外は、街灯のうなりが聞こえるくらい静かな天気です。ラジオは小さく、コーヒーは手の届くところに。",
+  "NIGHTWAVEは今夜も朝までここにいます。部屋にもうひとつ声がほしかった、あなたのために。",
+  "このあとは、こんなゆっくりした時間のためのスローナンバーを。どうか、そのままそこにいて。"
+];
+// tiny silent WAV (header + 0 samples) base64 - lets the loop advance with no backend
+const SILENT_WAV = "UklGRiQAAABXQVZFZm10IBAAAAABAAEARKwAAIhYAQACABAAZGF0YQAAAAA=";
+
+function clientMock(path, body){
+  const text = MOCK_LINES[Math.floor(Math.random()*MOCK_LINES.length)];
+  const base = { text, mood:"warm", arc_cue:"none", audio_b64:SILENT_WAV, words:[], wtimes:[], wdurations:[] };
+  if (path === "/api/call"){
+    return Object.assign({}, base, { caller_text:"（あなた、オンエアで）", meter_delta:0 });
+  }
+  return base;
+}
+
+/* ===================================================================
+   I. BROADCAST LOOP & ARC CUES
+   =================================================================== */
+function handleArcCue(cue){
+  if (cue === "glitch"){
+    if (!State.reducedMotion){
+      els.dialFrame.classList.add("flick");
+      setTimeout(()=>els.dialFrame.classList.remove("flick"), 500);
+    }
+    noiseBurst(160, 0.55);
+  } else if (cue === "static_swell"){
+    if (Sound.ctx){
+      const peak = Sound.hissGain.gain.value;
+      rampGain(Sound.hissGain, Math.min(0.6, peak+0.4), 0.6);
+      setTimeout(()=>updateHissForTuning(), 2600);
+    }
+  }
+
+  if (cue === "direct_address"){
+    // dim the room, bring the voice closer (less bandpass, more gain)
+    els.body.classList.add("intimate");
+    if (Sound.ctx){
+      rampGain(Sound.voiceGain, 1.35, 0.8);
+      const now = Sound.ctx.currentTime;
+      Sound.bandpass.frequency.cancelScheduledValues(now);
+      Sound.bandpass.frequency.setValueAtTime(Sound.bandpass.frequency.value, now);
+      Sound.bandpass.frequency.linearRampToValueAtTime(2000, now+0.8);
+      Sound.bandpass.Q.linearRampToValueAtTime(0.4, now+0.8);
+    }
+  } else {
+    els.body.classList.remove("intimate");
+    if (Sound.ctx){
+      rampGain(Sound.voiceGain, 1.0, 0.5);
+      const now = Sound.ctx.currentTime;
+      Sound.bandpass.frequency.cancelScheduledValues(now);
+      Sound.bandpass.frequency.setValueAtTime(Sound.bandpass.frequency.value, now);
+      Sound.bandpass.frequency.linearRampToValueAtTime(3400, now+0.5);
+      Sound.bandpass.Q.linearRampToValueAtTime(0.7, now+0.5);
+    }
+  }
+}
+
+async function broadcast(){
+  if (!State.powered || State.busy) return;
+  // off-station: don't fetch a clean broadcast; you only get a buried ghost fragment
+  if (Math.abs(State.freq - NIGHTWAVE_FREQ) > LOCK_BAND){
+    const f = (Sound.fragments && Sound.fragments.length) ? Sound.fragments[Math.floor(Math.random()*Sound.fragments.length)] : null;
+    playFragment(f);
+    State.lastVoiceEnd = performance.now();
+    return;
+  }
+  State.busy = true;
+  showCaption("… しばらくお待ちを …", "status");
+  const data = await api("/api/broadcast", { stage:State.stage, meter:Math.round(State.meter), topic:null });
+  State.busy = false;
+  await playSegment(data);
+}
+
+async function playSegment(data, callerText){
+  if (!data){ State.lastVoiceEnd = performance.now(); return; }
+  setMood(data.mood || State.mood);
+  handleArcCue(data.arc_cue || "none");
+  showCaptionKaraoke(data.text || "", data.words, data.wtimes, callerText);
+  await playVoiceB64(data.audio_b64);
+}
+
+/* ===================================================================
+   J. CALL-IN (tap-to-talk)
+   =================================================================== */
+async function ensureMic(){
+  if (Sound.mediaStream) return Sound.mediaStream;
+  const s = await navigator.mediaDevices.getUserMedia({audio:true});
+  Sound.mediaStream = s;
+  return s;
+}
+
+async function playCallerIntro(){
+  // On-demand templated welcome; the music bed covers the brief /speak latency.
+  let b64 = null;
+  try{
+    const seg = await fetchSegment("caller_intro");
+    b64 = seg && seg.audio_b64;
+  }catch(_){}
+  if (b64){ try{ await playVoiceB64(b64); }catch(_){} }
+}
+
+function toggleCall(e){
+  if (!State.powered) return;
+  if (State.recording){ stopCall(e); return; }
+  if (State.busy || State.connecting) return;
+  startCall(e);
+}
+
+async function startCall(e){
+  if (!State.powered || State.busy || State.recording || State.connecting) return;
+  if (e) e.preventDefault();
+  if (!navigator.mediaDevices || !window.MediaRecorder){
+    showCaption("このブラウザではマイクを使えません。", "status");
+    return;
+  }
+  try{
+    State.connecting = true;
+    const stream = await ensureMic();
+    if (!State.powered || !State.connecting){ State.connecting = false; return; }  // aborted (Esc) during mic prompt
+    // a call preempts the music; the DJ welcomes the caller first
+    if (State.songPlayer){ try{ State.songPlayer.stop(); }catch(_){} State.songPlayer = null; }
+    if (Sound._resolveEnd){ const r = Sound._resolveEnd; Sound._resolveEnd = null; r(); }
+    showCaption("… ただいまおつなぎしています …", "status");
+    await playCallerIntro();                 // "who are you, and what's on your mind?"
+    if (!State.powered || !State.connecting){ State.connecting = false; return; }  // aborted (Esc) during the intro
+    let rec;
+    if (MediaRecorder.isTypeSupported && MediaRecorder.isTypeSupported("audio/webm")){
+      rec = new MediaRecorder(stream, {mimeType:"audio/webm"});
+    } else if (MediaRecorder.isTypeSupported && MediaRecorder.isTypeSupported("audio/mp4")){
+      rec = new MediaRecorder(stream, {mimeType:"audio/mp4"});
+    } else {
+      rec = new MediaRecorder(stream);
+    }
+    Sound.recorder = rec;
+    Sound.recChunks = [];
+    rec.ondataavailable = ev=>{ if (ev.data && ev.data.size) Sound.recChunks.push(ev.data); };
+    rec.onstop = onCallStop;
+    rec.start();
+    State.recording = true;
+    State.connecting = false;
+    els.handset.classList.add("recording");
+    els.handset.querySelector(".ht b").textContent = "オンエア中";
+    setBroadcasting(false);
+    showCaption("● オンエア中 — どうぞ話して。もう一度タップで送信。", "status");
+  }catch(err){
+    State.connecting = false;
+    showCaption("マイクがブロックされています — 電話出演にはマイクの許可が必要です。", "status");
+  }
+}
+
+function stopCall(e){
+  if (!State.recording) return;
+  if (e) e.preventDefault();
+  State.recording = false;
+  els.handset.classList.remove("recording");
+  els.handset.querySelector(".ht b").textContent = "電話する";
+  try{ if (Sound.recorder && Sound.recorder.state !== "inactive") Sound.recorder.stop(); }
+  catch(err){ /* ignore */ }
+}
+
+// SP1: remember a caller for a later dedication (cap the queue at 2)
+function queueDedication(m){
+  if (!m || !m.topic) return;
+  State.dedicationQueue.push({ caller_name:m.caller_name||null, place:m.place||null,
+                               topic:m.topic, mood:m.mood||"warm" });
+  while (State.dedicationQueue.length > 2) State.dedicationQueue.shift();
+}
+
+async function onCallStop(){
+  const blob = new Blob(Sound.recChunks, { type: (Sound.recorder && Sound.recorder.mimeType) || "audio/webm" });
+  State.busy = true;
+  let audio_b64 = "";
+  try{ audio_b64 = await blobToB64(blob); }catch(e){}
+  // Fire the real request FIRST, then mask its latency with an instant stall
+  // line that plays while the reply generates underneath -- no dead air.
+  const respP = api("/api/call", { stage:State.stage, meter:Math.round(State.meter), audio_b64 });
+  showCaption("… DJが応答しています …", "status");
+  if (Sound.stalls && Sound.stalls.length){
+    const stall = Sound.stalls[Math.floor(Math.random() * Sound.stalls.length)];
+    try{ await playVoiceB64(stall); }catch(_){}
+  }
+  const data = await respP;
+  State.busy = false;
+  if (data && typeof data.meter_delta === "number") addMeter(data.meter_delta);
+  if (data && data.memory_patch) State.sessionMemory = data.memory_patch;
+  if (data && data.queue_dedication) queueDedication(data.memory_patch);
+  State.breaksSinceCaller = 0;   // SP2: next break reflects the caller's mood
+  await playSegment(data, data && data.caller_text);
+}
+
+function blobToB64(blob){
+  return new Promise((resolve,reject)=>{
+    const fr = new FileReader();
+    fr.onload = ()=>{ const s = String(fr.result); resolve(s.slice(s.indexOf(",")+1)); };
+    fr.onerror = reject;
+    fr.readAsDataURL(blob);
+  });
+}
+
+/* ===================================================================
+   K. POWER, WARM-UP, WIRING, SEED, rAF LOOP
+   =================================================================== */
+function setBroadcasting(on){
+  // The station is "ON AIR" (tube + label lit) the whole time it's powered -- a
+  // continuous broadcast -- not only while a voice clip plays. The tape reels
+  // still spin while a voice clip is actually sounding, as live feedback.
+  els.body.classList.toggle("broadcasting", !!State.powered);
+  els.onairLabel.textContent = State.powered ? "ON AIR" : "スタンバイ";
+  const spin = on && !State.reducedMotion;
+  els.reelL.classList.toggle("spin", spin);
+  els.reelR.classList.toggle("spin", spin);
+}
+
+// ---- power-on warm-up ritual (VISUAL ONLY). Drives --warm/--lock + the
+//      self-sweeping needle. Must NEVER block AudioContext.resume() / runShow /
+//      fetches; reduced-motion collapses it to an instant on. ----
+let warmRAF = null, sweepRAF = null;
+function easeThermal(x){ return x < .5 ? 2*x*x : 1 - Math.pow(-2*x+2, 2)/2; }
+function clearWarmup(){
+  State.warming = false;
+  if (warmRAF){ cancelAnimationFrame(warmRAF); warmRAF = null; }
+  if (sweepRAF){ cancelAnimationFrame(sweepRAF); sweepRAF = null; }
+}
+function runWarmup(){
+  clearWarmup();
+  if (State.reducedMotion){
+    setWarm(1); setLock(1);
+    setFreq(NIGHTWAVE_FREQ, false);
+    els.body.classList.add("broadcasting");
+    els.onairLabel.textContent = "ON AIR";
+    drawDial();
+    return;
+  }
+  State.warming = true;
+  setWarm(0); setLock(0);
+  // 1) filament bloom + backlight (radial mask w/ thermal-lag easing + early flicker)
+  const T0 = performance.now(), DUR = 3600;
+  (function bloom(now){
+    if (!State.powered){ clearWarmup(); return; }
+    const p = Math.min(1, (now - T0) / DUR);
+    const flick = p < .25 ? 0.06*Math.sin(now/40) : 0;
+    setWarm(Math.min(1, easeThermal(p) * (1 + flick)));
+    drawDial();   // brighten the scale numerals/ticks with the filament
+    if (p < 1){ warmRAF = requestAnimationFrame(bloom); }
+    else { setWarm(1); warmRAF = null; drawDial(); }
+  })(T0);
+  // 2) needle self-sweeps from the low end up and settles on 98.6 (damped overshoot)
+  captionTimers.push(setTimeout(()=>{
+    if (!State.powered){ return; }
+    const s = performance.now(), D = 2200;
+    const lockPct = freqToPct(NIGHTWAVE_FREQ) * 100;
+    (function sweep(now){
+      if (!State.powered){ sweepRAF = null; return; }
+      const p = Math.min(1, (now - s) / D);
+      let pct;
+      if (p < .45){ pct = 2 + (100 - 2) * (p / .45); }      // run up toward the high end
+      else {
+        const q = (p - .45) / .55;
+        const overshoot = Math.sin(q*Math.PI*2) * Math.pow(1 - q, 2) * 6;
+        pct = 100 + (lockPct - 100) * easeThermal(q) + overshoot;
+      }
+      const f = FREQ_MIN + (Math.max(0, Math.min(100, pct)) / 100) * (FREQ_MAX - FREQ_MIN);
+      // visual-only: move needle + lights, but do NOT mark fromUser (no fragments/eggs)
+      setFreq(f, false);
+      if (p < 1){ sweepRAF = requestAnimationFrame(sweep); }
+      else { sweepRAF = null; setFreq(NIGHTWAVE_FREQ, false); }
+    })(s);
+  }, 2600));
+  // 3) ON AIR tube ignites + carrier lock latches near the end of the ritual
+  captionTimers.push(setTimeout(()=>{
+    if (!State.powered) return;
+    setBroadcasting(false);                 // refresh reels/tube from current state
+    els.body.classList.add("broadcasting"); // tube ignites
+    els.onairLabel.textContent = "ON AIR";
+  }, 5200));
+  captionTimers.push(setTimeout(()=>{
+    if (!State.powered) return;
+    setLock(1);
+    State.warming = false;
+  }, 5600));
+}
+
+async function powerOn(){
+  if (State.powered) return;
+  // FIRST gesture: create + resume the single AudioContext, THEN audio.
+  initAudio();
+  try{ await Sound.ctx.resume(); }catch(e){}
+  State.powered = true;
+  els.body.classList.add("powered");
+  els.power.setAttribute("aria-pressed","true");
+  els.pwrTxt.innerHTML = "電源 &middot; 入";
+  els.handset.disabled = false;
+  els.body.classList.add("broadcasting");   // light the ON AIR sign the moment we're powered
+  els.onairLabel.textContent = "ON AIR";
+  runWarmup();                              // visual-only tube warm-up (non-blocking)
+  updateHissForTuning();
+  applyMeter();                             // gauge -> SIGNAL
+  rampGain(Sound.crackleGain, 0.05, 0.6);   // bring up the vinyl/room bed
+  playSonicLogo();                          // a warm sting as the station comes alive
+  startDrums();
+  if (!Sound.stalls) fetchStalls().then(s=>{ Sound.stalls = s; });
+  if (!Sound.fragments) fetchFragments().then(f=>{ Sound.fragments = f; });
+  requestLocale();   // resolve real local weather (permission prompt) in the background
+  State.lastVoiceEnd = performance.now();
+  showCaption("… 同調中 …", "status");
+  if (!State.songs) State.songs = await fetchSongs();
+  runShow();   // autonomous show: generated songs back-to-back (C2 weaves DJ talk in)
+}
+
+function powerOff(){
+  State.powered = false;
+  clearWarmup();
+  setWarm(0); setLock(0);
+  els.body.classList.remove("powered","broadcasting","intimate","locked");
+  els.power.setAttribute("aria-pressed","false");
+  els.pwrTxt.innerHTML = "電源 &middot; 切";
+  els.handset.disabled = true;
+  els.onairLabel.textContent = "スタンバイ";
+  setBroadcasting(false);
+  if (State.songPlayer){ try{ State.songPlayer.stop(); }catch(_){} State.songPlayer = null; }
+  State.songPlaying = false;
+  try{ if (Sound.voiceEl) Sound.voiceEl.pause(); }catch(e){}
+  if (Sound.ctx){ rampGain(Sound.hissGain, 0, 0.3); rampGain(Sound.padGain, 0, 0.3); rampGain(Sound.crackleGain, 0, 0.3); rampGain(Sound.drumGain, 0, 0.3); }
+  stopDrums();
+  drawDial();
+  applyMeter();                             // gauge caption -> "—"
+  showCaption("電源ノブを回して、周波数を合わせて…");
+}
+
+function togglePower(){ State.powered ? powerOff() : powerOn(); }
+
+// ---- analog VU needle + idle broadcast loop on a single rAF ----
+function roundRect(c,x,y,w,h,r){
+  c.beginPath();
+  c.moveTo(x+r,y);
+  c.arcTo(x+w,y,x+w,y+h,r);
+  c.arcTo(x+w,y+h,x,y+h,r);
+  c.arcTo(x,y+h,x,y,r);
+  c.arcTo(x,y,x+w,y,r);
+  c.closePath();
+}
+let vuRms = 0;   // smoothed needle source
+function loop(){
+  requestAnimationFrame(loop);
+
+  const c = els.vuCanvas, ctx = c.getContext("2d");
+  const dpr = window.devicePixelRatio || 1;
+  if (c.width !== Math.round(c.clientWidth*dpr) || c.height !== Math.round(c.clientHeight*dpr)){
+    c.width = Math.round(c.clientWidth*dpr); c.height = Math.round(c.clientHeight*dpr);
+  }
+  ctx.setTransform(dpr,0,0,dpr,0,0);
+  const w = c.clientWidth, h = c.clientHeight;
+  if (!w || !h) return;
+  ctx.clearRect(0,0,w,h);
+
+  let rms = 0;
+  if (Sound.analyser){
+    Sound.analyser.getByteFrequencyData(Sound.vuData);
+    let sum = 0;
+    for (let i=0;i<Sound.vuData.length;i++){ const v = Sound.vuData[i]/255; sum += v*v; }
+    rms = Math.sqrt(sum/Sound.vuData.length);
+  }
+  // smooth the needle so it sways like a real meter
+  vuRms += (rms - vuRms) * 0.18;
+
+  // ---- cream 1970s analog meter face ----
+  const face = ctx.createLinearGradient(0,0,0,h);
+  face.addColorStop(0, "#ead7ac");
+  face.addColorStop(1, "#9f8350");
+  ctx.fillStyle = face;
+  roundRect(ctx, 6, 6, w-12, h-12, 6);
+  ctx.fill();
+
+  // tick marks
+  ctx.strokeStyle = "rgba(40,25,10,.45)";
+  ctx.lineWidth = 1;
+  for (let i=0;i<=10;i++){
+    const x = 22 + i*((w-44)/10);
+    const tall = i % 5 === 0;
+    ctx.beginPath();
+    ctx.moveTo(x, h-24);
+    ctx.lineTo(x, h-(tall?40:32));
+    ctx.stroke();
+  }
+  // red zone at the top end
+  ctx.strokeStyle = "rgba(150,30,20,.6)";
+  for (let i=8;i<=10;i++){
+    const x = 22 + i*((w-44)/10);
+    ctx.beginPath(); ctx.moveTo(x, h-24); ctx.lineTo(x, h-40); ctx.stroke();
+  }
+  // "VU" label
+  ctx.fillStyle = "rgba(55,34,16,.8)";
+  ctx.font = "700 9px 'Marcellus SC', Georgia, 'Hiragino Mincho ProN', serif";
+  ctx.textAlign = "center";
+  ctx.fillText("VU", w/2, 22);
+
+  // the single moving needle, driven by the same rms
+  const cx = w/2, cy = h + 8;
+  const ang = -Math.PI*0.72 + Math.min(1, vuRms*2.2) * Math.PI*0.44;
+  ctx.strokeStyle = "#5a1b12"; ctx.lineWidth = 2;
+  ctx.beginPath(); ctx.moveTo(cx, cy);
+  ctx.lineTo(cx + Math.cos(ang)*(h*0.92), cy + Math.sin(ang)*(h*0.92)); ctx.stroke();
+  // pivot cap
+  ctx.fillStyle = "#5a1b12"; ctx.beginPath(); ctx.arc(cx, cy, 3, 0, Math.PI*2); ctx.fill();
+
+  // idle broadcast loop: if powered, locked, quiet for ~20s, fetch next segment
+  if (State.powered && !State.busy && !State.recording && !State.showRunning){
+    const quietFor = performance.now() - State.lastVoiceEnd;
+    const locked = Math.abs(State.freq - NIGHTWAVE_FREQ) <= LOCK_BAND;
+    if (locked && quietFor > 20000 && (!Sound.voiceEl || Sound.voiceEl.paused)){
+      broadcast();
+    }
+  }
+}
+
+// (time-drip realization meter retired -- the station no longer has an arc)
+
+/* ---- seed controls ---- */
+function applySeedFromURL(){
+  applyMeter();   // initialize the SIGNAL gauge (arc seed params retired)
+}
+
+function onGlobalKey(e){
+  // (the d / Shift+D arc-seed shortcuts were retired with the realization arc)
+}
+
+/* ---- WIRING ---- */
+function wire(){
+  // power
+  els.power.addEventListener("click", togglePower);
+  els.power.addEventListener("keydown", e=>{ if (e.key==="Enter"||e.key===" "){ e.preventDefault(); togglePower(); }});
+
+  // dial drag
+  els.dialFrame.addEventListener("pointerdown", onDialDown);
+  els.dialFrame.addEventListener("pointermove", onDialMove);
+  window.addEventListener("pointerup", onDialUp);
+  window.addEventListener("pointercancel", onDialUp);
+  els.needle.addEventListener("keydown", onNeedleKey);
+
+  // handset tap-to-talk (pointer + keyboard): tap to connect+talk, tap again to send
+  els.handset.addEventListener("pointerdown", toggleCall);
+  els.handset.addEventListener("keydown", e=>{
+    if (e.key==="Enter"||e.key===" "){ e.preventDefault(); toggleCall(e); }
+  });
+
+  // global: Space toggles talk/send, Esc hangs up -- works anywhere
+  window.addEventListener("keydown", e=>{
+    if (e.repeat) return;
+    if (e.key === "Escape" && els.innovScrim && !els.innovScrim.hidden){ e.preventDefault(); closeInnov(); return; }
+    if (e.key === " " || e.code === "Space"){
+      if (!State.powered || document.activeElement === els.power) return;  // power knob keeps Space
+      const tag = document.activeElement && document.activeElement.tagName;
+      if (tag === "INPUT" || tag === "TEXTAREA") return;
+      e.preventDefault();
+      toggleCall(e);
+    } else if (e.key === "Escape" && (State.recording || State.connecting)){
+      e.preventDefault();
+      if (State.recording){ stopCall(e); }
+      else {  // abort the caller-intro "connecting" window before the mic opens
+        State.connecting = false;
+        try{ Sound.voiceEl && Sound.voiceEl.pause(); }catch(_){}
+        onVoiceEnded();
+        showCaption("… 通話を取りやめました …", "status");
+      }
+    }
+  });
+
+  // Hidden judge demo trigger: ?demo=1 + Shift+D queues a caller dedication for the
+  // next break, so the callback is reliably demoable. Not visible product UI.
+  if (/[?&]demo=1\b/.test(location.search)){
+    State.demo = true;
+    window.addEventListener("keydown", e=>{
+      if (e.shiftKey && (e.key === "D" || e.key === "d")){
+        e.preventDefault();
+        queueDedication(State.sessionMemory ||
+          { caller_name:null, place:null, topic:"灯りをともしたまま起きている夜更かしの人たち", mood:"warm" });
+        showCaption("… デモ：次のブレイクに献呈曲を予約しました …", "status");
+      }
+      if (e.shiftKey && (e.key === "C" || e.key === "c")){
+        e.preventDefault();
+        maybeGenerateCard(true).then(ok => showCaption(ok ? "… デモ：新しいレコードが一枚プレスされました …" : "… デモ：信号が弱すぎます — 今回はレコードなし …", "status"));
+      }
+    });
+  }
+
+  // next / captions
+  els.nextBtn.addEventListener("click", ()=>{
+    if (!State.powered){ powerOn(); return; }
+    if (!State.busy){ State.lastVoiceEnd = 0; broadcast(); }
+  });
+  els.capToggle.addEventListener("click", ()=>{
+    State.captionsOn = !State.captionsOn;
+    els.capToggle.setAttribute("aria-pressed", String(State.captionsOn));
+    els.capToggle.textContent = "字幕：" + (State.captionsOn ? "オン" : "オフ");
+    if (!State.captionsOn){ els.caption.textContent = ""; els.transcript.innerHTML = ""; }
+  });
+
+  // station-log overlay (the "i" button)
+  els.infoBtn.addEventListener("click", openInnov);
+  els.innovClose.addEventListener("click", closeInnov);
+  els.innovScrim.addEventListener("click", e=>{ if (e.target === els.innovScrim) closeInnov(); });
+
+  // global seed keys
+  window.addEventListener("keydown", onGlobalKey);
+
+  // redraw dial on resize
+  let rt;
+  window.addEventListener("resize", ()=>{ clearTimeout(rt); rt=setTimeout(drawDial, 120); });
+}
+
+/* ---- INIT ---- */
+function init(){
+  wire();
+  drawDial();
+  setMood("warm");
+  setFreq(NIGHTWAVE_FREQ, false);
+  applySeedFromURL();
+  applyMeter();
+  requestAnimationFrame(loop);
+}
+init();
+</script>
+</body>
+</html>

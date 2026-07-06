@@ -1,0 +1,36 @@
+# NIGHTWAVE-JA ローカル構成（記録用。実行時は同名の環境変数が優先される）
+#
+# オリジナル (build-small-hackathon/nightwave) との対応:
+#   brain: MiniCPM5-1B GGUF Q4_K_M (Modal T4)  -> TinySwallow-1.5B-Instruct GGUF Q5_K_M (llama.cpp Metal)
+#   asr:   faster-whisper small (CPU)          -> 同じ (language=ja 固定)
+#   speak: Kokoro-82M voice=am_michael         -> 同じモデルの日本語ボイス voice=jm_kumo
+
+brain:
+  model_repo: SakanaAI/TinySwallow-1.5B-Instruct-GGUF
+  model_file: tinyswallow-1.5b-instruct-q5_k_m.gguf   # Q4_K_M は配布されていないため Q5_K_M
+  env: NIGHTWAVE_JA_GGUF          # 既定: experiment/data/external/models/ 配下
+  n_ctx: 4096
+  n_gpu_layers: -1                # Metal に全レイヤー
+  temperature: 0.8
+  max_tokens: 256
+  constraint: json_schema         # {text, mood, arc_cue} を GBNF 文法で強制
+
+asr:
+  model: small                    # env: NIGHTWAVE_JA_WHISPER
+  device: cpu
+  compute_type: int8
+  language: ja
+  beam_size: 5
+  vad_filter: true
+
+speak:
+  model_repo: hexgrad/Kokoro-82M
+  lang_code: j                    # misaki[ja] G2P
+  voice: jm_kumo                  # env: NIGHTWAVE_JA_VOICE（日本語男声）
+  sample_rate: 24000
+  captions: proportional          # 日本語はトークンタイムスタンプ非対応のため文字数比例配分
+
+server:
+  port: 7860                      # env: PORT
+  mock_env: NIGHTWAVE_MOCK        # "1" でモデル不使用の canned 運転
+  preload_env: PRELOAD            # "1" で起動時に3モデルをウォームアップ

@@ -1,0 +1,16 @@
+# NIGHTWAVE-JA ローカル版の依存（リポジトリルートの .venv に導入する）
+#   uv pip install --python .venv/bin/python -r requirements.txt
+fastapi
+uvicorn
+httpx
+pydantic
+python-multipart
+numpy
+soundfile
+huggingface_hub
+llama-cpp-python
+faster-whisper
+kokoro
+misaki[ja]
+# テスト
+pytest
